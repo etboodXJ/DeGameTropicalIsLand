@@ -18,3 +18,9 @@ npm install   # 安装依赖
 npm run dev   # 启动开发服务器
 npm run build # 构建生产版本
 ```
+
+## 本地预览
+```
+npm install -g serve
+serve -s build
+```

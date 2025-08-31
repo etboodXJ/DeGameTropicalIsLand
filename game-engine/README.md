@@ -1,8 +1,14 @@
-# 游戏引擎开发指南
+# 游戏引擎目录结构说明
 
 ## 技术栈
 - AI 游戏资源生成
 - typescript 编程语言
+- PIXI 游戏引擎
+- cocos (可选)
+- laya (可选)
+- three.js (可选)
+- unity (可选)
+- unreal (可选)
 
 ## 目录结构
 - assets
