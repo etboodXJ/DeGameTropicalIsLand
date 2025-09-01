@@ -3,7 +3,7 @@
 ## 开发环境
 - Sui Move 编程语言
 - Sui CLI 工具链
-- Sui Devnet 测试环境
+- Sui testnet 测试环境
 
 ## 目录结构
 - `modules/`: Move模块
@@ -22,3 +22,10 @@ sui move build  # 构建合约
 sui move test   # 运行测试
 sui client publish --gas-budget 10000000  # 部署合约
 ```
+
+## 合约开发的功能
+* 作者上架资源凭证
+* 作者积分奖励
+* 用户积分获取
+* 用户积分兑换
+* 积分排行榜
