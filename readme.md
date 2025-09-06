@@ -84,6 +84,8 @@
 
 参考文献
 ```
+https://github.com/MystenLabs/seal
 https://github.com/Euraxluo/seal-101
+https://learnblockchain.cn/article/17062
 https://github.com/dwallet-labs/ika
 ```
