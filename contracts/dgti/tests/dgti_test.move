@@ -84,7 +84,7 @@ module dgti::dgti_tests {
         let scenario = test_scenario::begin(TEST_USER);
         let ctx = test_scenario::ctx(&mut scenario);
         
-        const TEST_USERNAME: vector<u8> = b"test_user";
+        //const TEST_USERNAME: vector<u8> = b"test_user";
         
         // Create profile
         let profile = user::create(
@@ -105,7 +105,7 @@ module dgti::dgti_tests {
         let scenario = test_scenario::begin(TEST_USER);
         let ctx = test_scenario::ctx(&mut scenario);
         
-        const TEST_USERNAME: vector<u8> = b"test_user";
+        //const TEST_USERNAME: vector<u8> = b"test_user";
         const REPUTATION_DELTA: u64 = 10;
         
         // Create profile
@@ -126,7 +126,7 @@ module dgti::dgti_tests {
         let scenario = test_scenario::begin(TEST_USER);
         let ctx = test_scenario::ctx(&mut scenario);
         
-        const TEST_TITLE: vector<u8> = b"Test Proposal";
+        //const TEST_TITLE: vector<u8> = b"Test Proposal";
         const TEST_DESC: vector<u8> = b"Test Description";
         const DURATION: u64 = 86400; // 1 day in seconds
         
@@ -152,7 +152,7 @@ module dgti::dgti_tests {
         let scenario = test_scenario::begin(TEST_USER);
         let ctx = test_scenario::ctx(&mut scenario);
         
-        const TEST_TITLE: vector<u8> = b"Test Proposal";
+        //const TEST_TITLE: vector<u8> = b"Test Proposal";
         const TEST_DESC: vector<u8> = b"Test Description";
         const DURATION: u64 = 86400;
         
