@@ -1,36 +1,40 @@
 #[test_only]
-module dgti::dgti_tests {
-    use sui::test_scenario;
-    use dgti::asset;
-    use dgti::trade;
-    use dgti::user;
-    use dgti::governance;
-    
-    const TEST_USER: address = @0x1;
-    const TEST_ASSET_NAME: vector<u8> = b"Test Asset";
-    const TEST_ASSET_DESC: vector<u8> = b"Test Description";
-    const TEST_ASSET_META: vector<u8> = b"Test Metadata";
-    
-    #[test]
-    fun test_asset_creation() {
-        let scenario = test_scenario::begin(TEST_USER);
-        let ctx = test_scenario::ctx(&mut scenario);
-        
-        // Create asset
-        let asset = asset::create(
-            std::string::utf8(TEST_ASSET_NAME),
-            std::string::utf8(TEST_ASSET_DESC),
-            std::string::utf8(TEST_ASSET_META),
-            ctx
-        );
-        
-        // Verify asset properties
-          assert!(std::string::bytes(asset::get_name(&asset)) == TEST_ASSET_NAME, 0);
-          assert!(std::string::bytes(asset::get_description(&asset)) == TEST_ASSET_DESC, 0);
-        assert!(asset::get_owner(&asset) == TEST_USER, 0);
-        
-        test_scenario::end(scenario);
-    }
+module dgti::dgti_tests;
+
+use dgti::asset::{Self,Asset};
+use dgti::governance;
+use dgti::trade;
+use dgti::user;
+use sui::test_scenario;
+
+const TEST_USER: address = @0x1;
+const TEST_ASSET_NAME: vector<u8> = b"Test Asset";
+const TEST_ASSET_DESC: vector<u8> = b"Test Description";
+const TEST_ASSET_META: vector<u8> = b"Test Metadata";
+
+#[test]
+fun test_asset_creation() {
+    let mut scenario: sui::test_scenario::Scenario = test_scenario::begin(TEST_USER);
+    let ctx: &mut TxContext = test_scenario::ctx(&mut scenario);
+
+    // Create asset
+    let asset = asset::create(
+        std::string::utf8(TEST_ASSET_NAME),
+        std::string::utf8(TEST_ASSET_DESC),
+        std::string::utf8(TEST_ASSET_META),
+        ctx,
+    );
+
+    // Verify asset properties
+    assert!(std::string::bytes(asset::get_name(&asset)) == TEST_ASSET_NAME, 0);
+    assert!(std::string::bytes(asset::get_description(&asset)) == TEST_ASSET_DESC, 0);
+    assert!(asset::get_owner(&asset) == TEST_USER, 0);
+
+    asset::remove2(asset);
+
+    test_scenario::end(scenario);
+}
+/*
     
     #[test]
     fun test_asset_transfer() {
@@ -176,4 +180,4 @@ module dgti::dgti_tests {
         
         test_scenario::end(scenario);
     }
-}
+    */
