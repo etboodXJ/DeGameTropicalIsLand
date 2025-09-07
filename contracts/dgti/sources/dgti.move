@@ -57,6 +57,17 @@ module dgti::asset {
     ) {
         asset.metadata = new_metadata;
     }
+    
+    /// Get asset name
+    public fun get_name(asset: &Asset): &String {
+        &asset.name
+    }
+    
+    /// Get asset description
+    public fun get_description(asset: &Asset): &String {
+        &asset.description
+    }
+    
 }
 /// Governance module for protocol decisions
 module dgti::governance {
@@ -107,6 +118,7 @@ module dgti::governance {
             proposal.votes_against = proposal.votes_against + 1;
         }
     }
+    
 }
 /// User module for managing player profiles
 module dgti::user {
@@ -144,6 +156,7 @@ module dgti::user {
     ) {
         profile.reputation = profile.reputation + delta;
     }
+    
 }
 /// Trade module for handling asset transactions
 module dgti::trade {

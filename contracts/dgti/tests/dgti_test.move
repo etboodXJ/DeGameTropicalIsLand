@@ -21,12 +21,12 @@ module dgti::dgti_tests {
             std::string::utf8(TEST_ASSET_NAME),
             std::string::utf8(TEST_ASSET_DESC),
             std::string::utf8(TEST_ASSET_META),
-            &mut ctx
+            ctx
         );
         
         // Verify asset properties
-        assert!(std::string::bytes(&asset::get_name(&asset)) == TEST_ASSET_NAME, 0);
-        assert!(std::string::bytes(&asset::get_description(&asset)) == TEST_ASSET_DESC, 0);
+          assert!(std::string::bytes(asset::get_name(&asset)) == TEST_ASSET_NAME, 0);
+          assert!(std::string::bytes(asset::get_description(&asset)) == TEST_ASSET_DESC, 0);
         assert!(asset::get_owner(&asset) == TEST_USER, 0);
         
         test_scenario::end(scenario);
@@ -42,7 +42,7 @@ module dgti::dgti_tests {
             std::string::utf8(TEST_ASSET_NAME),
             std::string::utf8(TEST_ASSET_DESC),
             std::string::utf8(TEST_ASSET_META),
-            &mut ctx
+            ctx
         );
         
         // Transfer to new owner
@@ -63,18 +63,18 @@ module dgti::dgti_tests {
             std::string::utf8(TEST_ASSET_NAME),
             std::string::utf8(TEST_ASSET_DESC),
             std::string::utf8(TEST_ASSET_META),
-            &mut ctx
+            ctx
         );
         
         // Create trade offer
         let price = 1000;
         let expiration = 10000;
-        let offer = trade::create_offer(&mut asset, price, expiration, &mut ctx);
+        let offer = trade::create_offer(&mut asset, price, expiration,ctx);
         
         // Verify offer properties
-        assert!(offer.price == price, 0);
-        assert!(offer.expiration == expiration, 0);
-        assert!(offer.seller == TEST_USER, 0);
+        assert!(trade::get_price(&offer) == price, 0);
+        assert!(trade::get_expiration(&offer) == expiration, 0);
+        assert!(trade::get_seller(&offer) == TEST_USER, 0);
         
         test_scenario::end(scenario);
     }
@@ -89,7 +89,7 @@ module dgti::dgti_tests {
         // Create profile
         let profile = user::create(
             std::string::utf8(TEST_USERNAME),
-            &mut ctx
+            ctx
         );
         
         // Verify profile properties
@@ -105,13 +105,13 @@ module dgti::dgti_tests {
         let scenario = test_scenario::begin(TEST_USER);
         let ctx = test_scenario::ctx(&mut scenario);
         
-        //const TEST_USERNAME: vector<u8> = b"test_user";
-        const REPUTATION_DELTA: u64 = 10;
+        const TEST_USERNAME: vector<u8> = b"test_user";
+        let REPUTATION_DELTA: u64 = 10;
         
         // Create profile
         let profile = user::create(
             std::string::utf8(TEST_USERNAME),
-            &mut ctx
+            ctx
         );
         
         // Update reputation
@@ -135,7 +135,7 @@ module dgti::dgti_tests {
             std::string::utf8(TEST_TITLE),
             std::string::utf8(TEST_DESC),
             DURATION,
-            &mut ctx
+            ctx
         );
         
         // Verify proposal properties
@@ -161,7 +161,7 @@ module dgti::dgti_tests {
             std::string::utf8(TEST_TITLE),
             std::string::utf8(TEST_DESC),
             DURATION,
-            &mut ctx
+            ctx
         );
         
         // Vote for proposal
