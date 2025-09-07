@@ -80,12 +80,4 @@
 - 基础框架
 
 
-
-
-参考文献
-```
-https://github.com/MystenLabs/seal
-https://github.com/Euraxluo/seal-101
-https://learnblockchain.cn/article/17062
-https://github.com/dwallet-labs/ika
-```
+[参考资料](./docs/参考资料.md)
