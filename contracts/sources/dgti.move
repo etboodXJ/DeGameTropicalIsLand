@@ -2,10 +2,6 @@
 /// Module: dgti
 module dgti::dgti;
 */
-
-// For Move coding conventions, see
-// https://docs.sui.io/concepts/sui-move-concepts/conventions
-
 /// Asset module for managing game assets
 #[allow(unused_use,duplicate_alias,unused_const)]
 module dgti::asset {
@@ -64,26 +60,26 @@ module dgti::asset {
         &asset.description
     }
 
-    public fun remove(ctx: &mut TxContext) {
-        let asset = Asset{
-            id: object::new(ctx),
-            name:utf8(b"test"),
-            description:utf8(b"test"),
-            metadata:utf8(b"test"),
-            owner: tx_context::sender(ctx),
-        };
+    // public fun remove(ctx: &mut TxContext) {
+    //     let asset = Asset{
+    //         id: object::new(ctx),
+    //         name:utf8(b"test"),
+    //         description:utf8(b"test"),
+    //         metadata:utf8(b"test"),
+    //         owner: tx_context::sender(ctx),
+    //     };
 
-        let Asset {
-            id,
-            name: _,
-            description: _,
-            metadata: _,
-            owner: _,
-        } = asset;
-        object::delete(id);
-    }
+    //     let Asset {
+    //         id,
+    //         name: _,
+    //         description: _,
+    //         metadata: _,
+    //         owner: _,
+    //     } = asset;
+    //     object::delete(id);
+    // }
 
-    public fun remove2(asset: Asset) {
+    public fun remove(asset: Asset) {
         let Asset {
             id,
             name: _,
