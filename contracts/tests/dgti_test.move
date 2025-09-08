@@ -1,4 +1,5 @@
 #[test_only]
+#[allow(unused_use,duplicate_alias,unused_const,deprecated_usage)]
 module dgti::dgti_tests;
 
 use dgti::asset::{Self,Asset};

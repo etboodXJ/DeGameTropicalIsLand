@@ -7,6 +7,7 @@ module dgti::dgti;
 // https://docs.sui.io/concepts/sui-move-concepts/conventions
 
 /// Asset module for managing game assets
+#[allow(unused_use,duplicate_alias,unused_const)]
 module dgti::asset {
     
     use std::string::{Self,utf8,String};
@@ -81,18 +82,20 @@ module dgti::asset {
         } = asset;
         object::delete(id);
     }
+
     public fun remove2(asset: Asset) {
         let Asset {
             id,
             name: _,
             description: _,
             metadata: _,
-            owner: _
+            owner: _,
         } = asset;
         object::delete(id);
     }
 }
 /// Governance module for protocol decisions
+#[allow(unused_use,duplicate_alias,unused_const)]
 module dgti::governance {
     use std::string::String;
     use sui::object::{Self, UID};
@@ -140,6 +143,7 @@ module dgti::governance {
     }
 }
 /// User module for managing player profiles
+#[allow(unused_use,duplicate_alias,unused_const)]
 module dgti::user {
     use std::string::String;
     use sui::object::{Self, UID};
@@ -171,6 +175,7 @@ module dgti::user {
     }
 }
 /// Trade module for handling asset transactions
+#[allow(unused_use,duplicate_alias,unused_const)]
 module dgti::trade {
     use dgti::asset::Asset;
     use std::string::String;
