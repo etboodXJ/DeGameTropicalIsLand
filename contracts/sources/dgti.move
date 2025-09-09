@@ -1,8 +1,8 @@
 /*
-/// Module: dgti
+// 模块: dgti
 module dgti::dgti;
 */
-/// Asset module for managing game assets
+//游戏资源模块
 #[allow(unused_use,duplicate_alias,unused_const)]
 module dgti::asset {
     
@@ -10,7 +10,7 @@ module dgti::asset {
     use sui::object::{Self, UID};
     use sui::tx_context::TxContext;
 
-    /// Game asset representation
+    // 游戏资源对象
     public struct Asset has key, store {
         id: UID,
         name: String,
@@ -19,7 +19,7 @@ module dgti::asset {
         owner: address,
     }
 
-    /// Create a new game asset
+    // 创建新游戏资产
     public fun create(
         name: String,
         description: String,
@@ -35,27 +35,27 @@ module dgti::asset {
         }
     }
 
-    /// Transfer asset ownership
+    // 转移资产所有权
     public fun transfer(asset: &mut Asset, new_owner: address) {
         asset.owner = new_owner;
     }
 
-    /// Get asset owner
+    // 获取资产所有者
     public fun get_owner(asset: &Asset): address {
         asset.owner
     }
 
-    /// Update asset metadata
+    // 更新资产元数据
     public fun update_metadata(asset: &mut Asset, new_metadata: String) {
         asset.metadata = new_metadata;
     }
 
-    /// Get asset name
+    // 获取资产名称
     public fun get_name(asset: &Asset): &String {
         &asset.name
     }
 
-    /// Get asset description
+    // 获取资产描述
     public fun get_description(asset: &Asset): &String {
         &asset.description
     }
@@ -90,14 +90,14 @@ module dgti::asset {
         object::delete(id);
     }
 }
-/// Governance module for protocol decisions
+// 治理模块 - 协议决策
 #[allow(unused_use,duplicate_alias,unused_const)]
 module dgti::governance {
     use std::string::String;
     use sui::object::{Self, UID};
     use sui::tx_context::TxContext;
 
-    /// Proposal representation
+    // 提案表示
     public struct Proposal has key, store {
         id: UID,
         creator: address,
@@ -109,7 +109,7 @@ module dgti::governance {
         votes_against: u64,
     }
 
-    /// Create a new governance proposal
+    // 创建新治理提案
     public fun create(
         title: String,
         description: String,
@@ -129,7 +129,7 @@ module dgti::governance {
         }
     }
 
-    /// Vote on a proposal
+    // 对提案进行投票
     public fun vote(proposal: &mut Proposal, is_for: bool) {
         if (is_for) {
             proposal.votes_for = proposal.votes_for + 1;
@@ -138,14 +138,14 @@ module dgti::governance {
         }
     }
 }
-/// User module for managing player profiles
+// 用户模块 - 管理玩家档案
 #[allow(unused_use,duplicate_alias,unused_const)]
 module dgti::user {
     use std::string::String;
     use sui::object::{Self, UID};
     use sui::tx_context::TxContext;
 
-    /// Player profile representation
+    // 玩家档案表示
     public struct Profile has key, store {
         id: UID,
         address: address,
@@ -154,7 +154,7 @@ module dgti::user {
         joined_timestamp: u64,
     }
 
-    /// Create a new player profile
+    // 创建新玩家档案
     public fun create(username: String, ctx: &mut TxContext): Profile {
         Profile {
             id: object::new(ctx),
@@ -165,12 +165,12 @@ module dgti::user {
         }
     }
 
-    /// Update player reputation
+    // 更新玩家声誉
     public fun update_reputation(profile: &mut Profile, delta: u64) {
         profile.reputation = profile.reputation + delta;
     }
 }
-/// Trade module for handling asset transactions
+// 交易模块 - 处理资产交易
 #[allow(unused_use,duplicate_alias,unused_const)]
 module dgti::trade {
     use dgti::asset::Asset;
@@ -178,7 +178,7 @@ module dgti::trade {
     use sui::object::{Self, UID};
     use sui::tx_context::TxContext;
 
-    /// Trade offer representation
+    // 交易报价表示
     public struct TradeOffer has key, store {
         id: UID,
         asset_id: ID,
@@ -187,7 +187,7 @@ module dgti::trade {
         expiration: u64,
     }
 
-    /// Create a new trade offer
+    // 创建新交易报价
     public fun create_offer(
         asset: &mut Asset,
         price: u64,

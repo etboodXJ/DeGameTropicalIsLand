@@ -1,5 +1,5 @@
-/// Module: creative
-/// 创意管理系统模块 - 管理创意提交、实例和期待值
+// 模块: creative
+// 创意管理系统模块 - 管理创意提交、实例和期待值
 #[allow(unused_use,duplicate_alias)]
 module dgti::creative {
     use std::string::{Self, String};
@@ -10,14 +10,14 @@ module dgti::creative {
     use std::option::{Self, Option};
     use dgti::points::{Self, PointsBalance};
 
-    /// 创意状态常量
+    // 创意状态常量
     const STATUS_DRAFT: u8 = 0;      // 草稿
     const STATUS_SUBMITTED: u8 = 1;  // 已提交
     const STATUS_REVIEWING: u8 = 2;  // 审核中
     const STATUS_PUBLISHED: u8 = 3;  // 已发布
     const STATUS_REJECTED: u8 = 4;  // 已拒绝
 
-    /// 创意对象
+    // 创意对象
     public struct Creative has key, store {
         id: UID,
         creator: address,
@@ -33,7 +33,7 @@ module dgti::creative {
         category: String,
     }
 
-    /// 创意实例
+    // 创意实例
     public struct CreativeInstance has key, store {
         id: UID,
         creative_id: ID,
@@ -43,7 +43,7 @@ module dgti::creative {
         access_level: u8, // 0:基础, 1:高级, 2:完整
     }
 
-    /// 期待值记录
+    // 期待值记录
     public struct Expectation has key, store {
         id: UID,
         creative_id: ID,
@@ -53,7 +53,7 @@ module dgti::creative {
         comment: String,
     }
 
-    /// 创意统计
+    // 创意统计
     public struct CreativeStats has key, store {
         id: UID,
         creative_id: ID,
@@ -64,7 +64,7 @@ module dgti::creative {
         last_updated: u64,
     }
 
-    /// 创建新创意
+    // 创建新创意
     public fun create_creative(
         title: String,
         description: String,
@@ -92,7 +92,7 @@ module dgti::creative {
         }
     }
 
-    /// 提交创意审核
+    // 提交创意审核
     public fun submit_creative(
         creative: &mut Creative,
         _ctx: &mut TxContext
@@ -107,7 +107,7 @@ module dgti::creative {
         creative.updated_at = tx_context::epoch(_ctx);
     }
 
-    /// 更新创意信息
+    // 更新创意信息
     public fun update_creative(
         creative: &mut Creative,
         title: Option<String>,
@@ -147,7 +147,7 @@ module dgti::creative {
         creative.updated_at = tx_context::epoch(_ctx);
     }
 
-    /// 审核创意 (管理员功能)
+    // 审核创意 (管理员功能)
     public fun review_creative(
         creative: &mut Creative,
         approved: bool,
@@ -165,7 +165,7 @@ module dgti::creative {
         creative.updated_at = tx_context::epoch(_ctx);
     }
 
-    /// 发布创意
+    // 发布创意
     public fun publish_creative(
         creative: &mut Creative,
         _ctx: &mut TxContext
@@ -180,7 +180,7 @@ module dgti::creative {
         creative.updated_at = tx_context::epoch(_ctx);
     }
 
-    /// 删除创意
+    // 删除创意
     public fun delete_creative(
         creative: Creative,
         _ctx: &mut TxContext
@@ -209,7 +209,7 @@ module dgti::creative {
         object::delete(id);
     }
 
-    /// 创建创意实例
+    // 创建创意实例
     public fun create_instance(
         creative: &Creative,
         owner: address,
@@ -233,7 +233,7 @@ module dgti::creative {
         }
     }
 
-    /// 转移创意实例
+    // 转移创意实例
     public fun transfer_instance(
         instance: &mut CreativeInstance,
         new_owner: address,
@@ -245,7 +245,7 @@ module dgti::creative {
         instance.owner = new_owner;
     }
 
-    /// 添加期待值
+    // 添加期待值
     public fun add_expectation(
         creative: &mut Creative,
         user: address,
@@ -274,7 +274,7 @@ module dgti::creative {
         }
     }
 
-    /// 更新期待值
+    // 更新期待值
     public fun update_expectation(
         expectation: &mut Expectation,
         new_value: u64,
@@ -296,12 +296,12 @@ module dgti::creative {
         expectation.value = new_value;
     }
 
-    /// 获取创意总期待值
+    // 获取创意总期待值
     public fun get_total_expectation(creative: &Creative): u64 {
         creative.total_expectation
     }
 
-    /// 计算用户期待值占比
+    // 计算用户期待值占比
     public fun calculate_user_expectation_ratio(
         creative: &Creative,
         user_expectation: u64
@@ -314,7 +314,7 @@ module dgti::creative {
         (user_expectation * 10000) / creative.total_expectation
     }
 
-    /// 获取创意信息
+    // 获取创意信息
     public fun get_creative_info(creative: &Creative): (String, String, String, u8, address, u64) {
         (
             creative.title,
@@ -326,27 +326,27 @@ module dgti::creative {
         )
     }
 
-    /// 获取创意状态
+    // 获取创意状态
     public fun get_status(creative: &Creative): u8 {
         creative.status
     }
 
-    /// 检查创意是否已发布
+    // 检查创意是否已发布
     public fun is_published(creative: &Creative): bool {
         creative.status == STATUS_PUBLISHED
     }
 
-    /// 获取创作者地址
+    // 获取创作者地址
     public fun get_creator(creative: &Creative): address {
         creative.creator
     }
 
-    /// 获取创意收入
+    // 获取创意收入
     public fun get_revenue(creative: &Creative): u64 {
         creative.revenue
     }
 
-    /// 更新创意收入
+    // 更新创意收入
     public fun update_revenue(
         creative: &mut Creative,
         amount: u64,
@@ -356,17 +356,17 @@ module dgti::creative {
         creative.updated_at = tx_context::epoch(_ctx);
     }
 
-    /// 获取创意标签
+    // 获取创意标签
     public fun get_tags(creative: &Creative): vector<String> {
         creative.tags
     }
 
-    /// 获取创意分类
+    // 获取创意分类
     public fun get_category(creative: &Creative): String {
         creative.category
     }
 
-    /// 创建创意统计
+    // 创建创意统计
     public fun create_stats(
         creative_id: ID,
         ctx: &mut TxContext
@@ -382,7 +382,7 @@ module dgti::creative {
         }
     }
 
-    /// 更新统计信息
+    // 更新统计信息
     public fun update_stats(
         stats: &mut CreativeStats,
         views: u64,
@@ -403,7 +403,7 @@ module dgti::creative {
         stats.last_updated = tx_context::epoch(_ctx);
     }
 
-    /// 获取统计信息
+    // 获取统计信息
     public fun get_stats(stats: &CreativeStats): (u64, u64, u64, u64) {
         (
             stats.total_views,

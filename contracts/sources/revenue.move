@@ -1,5 +1,5 @@
-/// Module: revenue
-/// 盈利分配算法模块 - 管理创意盈利计算和分配
+// 模块: revenue
+// 盈利分配算法模块 - 管理创意盈利计算和分配
 #[allow(unused_use,duplicate_alias,unused_const)]
 module dgti::revenue {
     use std::string::{Self, String};
@@ -206,7 +206,7 @@ module dgti::revenue {
         }
     }
 
-    /// 用户领取返利
+    // 用户领取返利
     public fun claim_user_reward(
         reward: &mut UserReward,
         points_balance: &mut PointsBalance,
@@ -230,7 +230,7 @@ module dgti::revenue {
         true
     }
 
-    /// 创建投资人收益记录
+    // 创建投资人收益记录
     public fun create_investor_share(
         investor: address,
         creative_id: ID,
@@ -247,7 +247,7 @@ module dgti::revenue {
         }
     }
 
-    /// 投资人领取收益
+    // 投资人领取收益
     public fun claim_investor_share(
         share: &mut InvestorShare,
         _ctx: &mut TxContext
@@ -264,7 +264,7 @@ module dgti::revenue {
         true
     }
 
-    /// 创建创作者收益记录
+    // 创建创作者收益记录
     public fun create_creator_revenue(
         creator: address,
         creative_id: ID,
@@ -281,7 +281,7 @@ module dgti::revenue {
         }
     }
 
-    /// 创作者领取收益
+    // 创作者领取收益
     public fun claim_creator_revenue(
         revenue: &mut CreatorRevenue,
         _ctx: &mut TxContext
@@ -298,7 +298,7 @@ module dgti::revenue {
         true
     }
 
-    /// 添加到平台收益池
+    // 添加到平台收益池
     public fun add_to_platform_pool(
         pool: &mut PlatformPool,
         amount: u64,
@@ -309,7 +309,7 @@ module dgti::revenue {
         pool.last_updated = tx_context::epoch(_ctx);
     }
 
-    /// 从平台收益池提取
+    // 从平台收益池提取
     public fun withdraw_from_pool(
         pool: &mut PlatformPool,
         amount: u64,
@@ -324,12 +324,12 @@ module dgti::revenue {
         true
     }
 
-    /// 获取收益池余额
+    // 获取收益池余额
     public fun get_pool_balance(pool: &PlatformPool): u64 {
         pool.balance
     }
 
-    /// 获取分配信息
+    // 获取分配信息
     public fun get_distribution_info(
         distribution: &RevenueDistribution
     ): (ID, u64, u64, u64, u64, u64, bool) {
@@ -344,14 +344,14 @@ module dgti::revenue {
         )
     }
 
-    /// 计算平台总收入
+    // 计算平台总收入
     public fun calculate_platform_revenue(
         global_stats: &GlobalStats
     ): u64 {
         global_stats.total_platform_revenue
     }
 
-    /// 获取全局统计信息
+    // 获取全局统计信息
     public fun get_global_stats(
         stats: &GlobalStats
     ): (u64, u64, u64, u64, u64) {
@@ -364,7 +364,7 @@ module dgti::revenue {
         )
     }
 
-    /// 更新活跃创意数量
+    // 更新活跃创意数量
     public fun update_active_creatives(
         stats: &mut GlobalStats,
         count: u64,
