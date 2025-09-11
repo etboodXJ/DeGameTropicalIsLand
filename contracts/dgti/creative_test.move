@@ -447,4 +447,154 @@ module dgti::creative_tests {
 
         test_scenario::end(scenario);
     }
+
+    #[test]
+    fun test_encrypted_id_initially_empty() {
+        let mut scenario = test_scenario::begin(TEST_USER);
+        let ctx = test_scenario::ctx(&mut scenario);
+
+        let tags = vector[];
+        let creative = creative::create_creative(
+            string::utf8(TEST_TITLE),
+            string::utf8(TEST_DESC),
+            string::utf8(TEST_CONTENT),
+            string::utf8(TEST_CATEGORY),
+            tags,
+            ctx
+        );
+
+        // 验证初始加密ID为空
+        assert!(!creative::has_encrypted_id(&creative), 0);
+        assert!(string::is_empty(creative::get_encrypted_id(&creative)), 1);
+
+        test_scenario::end(scenario);
+    }
+
+    #[test]
+    fun test_set_encrypted_id_draft() {
+        let mut scenario = test_scenario::begin(TEST_USER);
+        let ctx = test_scenario::ctx(&mut scenario);
+
+        let tags = vector[];
+        let mut creative = creative::create_creative(
+            string::utf8(TEST_TITLE),
+            string::utf8(TEST_DESC),
+            string::utf8(TEST_CONTENT),
+            string::utf8(TEST_CATEGORY),
+            tags,
+            ctx
+        );
+
+        let encrypted_id = string::utf8(b"encrypted123");
+        creative::set_encrypted_id(&mut creative, encrypted_id, ctx);
+
+        // 验证加密ID已设置
+        assert!(creative::has_encrypted_id(&creative), 0);
+        assert!(!string::is_empty(creative::get_encrypted_id(&creative)), 1);
+        assert!(creative::get_encrypted_id(&creative) == encrypted_id, 2);
+
+        test_scenario::end(scenario);
+    }
+
+    #[test]
+    fun test_set_encrypted_id_published() {
+        let mut scenario = test_scenario::begin(TEST_USER);
+        let ctx = test_scenario::ctx(&mut scenario);
+
+        let tags = vector[];
+        let mut creative = creative::create_creative(
+            string::utf8(TEST_TITLE),
+            string::utf8(TEST_DESC),
+            string::utf8(TEST_CONTENT),
+            string::utf8(TEST_CATEGORY),
+            tags,
+            ctx
+        );
+
+        // 发布创意
+        creative::submit_creative(&mut creative, ctx);
+        creative::review_creative(&mut creative, true, ctx);
+
+        let encrypted_id = string::utf8(b"encrypted456");
+        creative::set_encrypted_id(&mut creative, encrypted_id, ctx);
+
+        // 验证加密ID已设置
+        assert!(creative::has_encrypted_id(&creative), 0);
+        assert!(!string::is_empty(creative::get_encrypted_id(&creative)), 1);
+        assert!(creative::get_encrypted_id(&creative) == encrypted_id, 2);
+
+        test_scenario::end(scenario);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 1)] // 期望设置失败（非创作者）
+    fun test_set_encrypted_id_unauthorized() {
+        let mut scenario = test_scenario::begin(TEST_USER);
+        let ctx = test_scenario::ctx(&mut scenario);
+
+        let tags = vector[];
+        let mut creative = creative::create_creative(
+            string::utf8(TEST_TITLE),
+            string::utf8(TEST_DESC),
+            string::utf8(TEST_CONTENT),
+            string::utf8(TEST_CATEGORY),
+            tags,
+            ctx
+        );
+
+        // 尝试用不同用户设置加密ID（应该失败）
+        let encrypted_id = string::utf8(b"encrypted789");
+        creative::set_encrypted_id(&mut creative, encrypted_id, ctx);
+
+        test_scenario::end(scenario);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 2)] // 期望设置失败（状态不允许）
+    fun test_set_encrypted_id_invalid_status() {
+        let mut scenario = test_scenario::begin(TEST_USER);
+        let ctx = test_scenario::ctx(&mut scenario);
+
+        let tags = vector[];
+        let mut creative = creative::create_creative(
+            string::utf8(TEST_TITLE),
+            string::utf8(TEST_DESC),
+            string::utf8(TEST_CONTENT),
+            string::utf8(TEST_CATEGORY),
+            tags,
+            ctx
+        );
+
+        // 提交创意但不审核（状态为已提交）
+        creative::submit_creative(&mut creative, ctx);
+
+        // 尝试在已提交状态下设置加密ID（应该失败）
+        let encrypted_id = string::utf8(b"encrypted101");
+        creative::set_encrypted_id(&mut creative, encrypted_id, ctx);
+
+        test_scenario::end(scenario);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 3)] // 期望设置失败（加密ID为空）
+    fun test_set_encrypted_id_empty() {
+        let mut scenario = test_scenario::begin(TEST_USER);
+        let ctx = test_scenario::ctx(&mut scenario);
+
+        let tags = vector[];
+        let mut creative = creative::create_creative(
+            string::utf8(TEST_TITLE),
+            string::utf8(TEST_DESC),
+            string::utf8(TEST_CONTENT),
+            string::utf8(TEST_CATEGORY),
+            tags,
+            ctx
+        );
+
+        // 尝试设置空的加密ID（应该失败）
+        let empty_id = string::utf8(b"");
+        creative::set_encrypted_id(&mut creative, empty_id, ctx);
+
+        test_scenario::end(scenario);
+    }
 }

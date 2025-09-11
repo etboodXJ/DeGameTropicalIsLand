@@ -2,7 +2,7 @@
 // 创意管理系统模块 - 管理创意提交、实例和期待值
 #[allow(unused_use,duplicate_alias)]
 module dgti::creative {
-    use std::string::{Self, String};
+    use std::string::{Self, utf8,String};
     use sui::object::{Self, UID, ID};
     use sui::tx_context::{Self, TxContext};
     use sui::vec_map::{Self, VecMap};
@@ -50,6 +50,7 @@ module dgti::creative {
         revenue: u64,
         tags: vector<String>,
         category: String,
+        encrypted_id: String, // 加密内容ID，用于后期加密内容管理
     }
 
     // 创意实例
@@ -108,6 +109,7 @@ module dgti::creative {
             revenue: 0,
             tags,
             category,
+            encrypted_id: utf8(b""), // 初始化为空字符串，后期可设置加密ID
         }
     }
 
@@ -223,6 +225,7 @@ module dgti::creative {
             revenue: _,
             tags: _,
             category: _,
+            encrypted_id: _,
         } = creative;
         
         object::delete(id);
@@ -383,6 +386,35 @@ module dgti::creative {
     // 获取创意分类
     public fun get_category(creative: &Creative): String {
         creative.category
+    }
+
+    // 设置加密ID
+    public fun set_encrypted_id(
+        creative: &mut Creative,
+        encrypted_id: String,
+        _ctx: &mut TxContext
+    ) {
+        // 验证创作者
+        assert!(creative.creator == tx_context::sender(_ctx), 1);
+        
+        // 验证状态 (只有草稿或已发布状态可以设置加密ID)
+        assert!(creative.status == STATUS_DRAFT || creative.status == STATUS_PUBLISHED, 2);
+        
+        // 验证加密ID不为空
+        assert!(!string::is_empty(&encrypted_id), 3);
+        
+        creative.encrypted_id = encrypted_id;
+        creative.updated_at = tx_context::epoch(_ctx);
+    }
+
+    // 获取加密ID
+    public fun get_encrypted_id(creative: &Creative): &String {
+        &creative.encrypted_id
+    }
+
+    // 检查是否设置了加密ID
+    public fun has_encrypted_id(creative: &Creative): bool {
+        !string::is_empty(&creative.encrypted_id)
     }
 
     // 创建创意统计
