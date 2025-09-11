@@ -17,6 +17,25 @@ module dgti::creative {
     const STATUS_PUBLISHED: u8 = 3;  // 已发布
     const STATUS_REJECTED: u8 = 4;  // 已拒绝
 
+    public enum Status {
+        Draft,
+        Submitted,
+        Reviewing,
+        Published,
+        Rejected,
+    }
+ 
+    // 获取状态对应的数值（如果需要）
+    public fun as_u8(status: &Status): u8 {
+        match (status) {
+            Status::Draft => 0,
+            Status::Submitted => 1,
+            Status::Reviewing => 2,
+            Status::Published => 3,
+            Status::Rejected => 4,
+        }
+    }
+
     // 创意对象
     public struct Creative has key, store {
         id: UID,
