@@ -24,3 +24,10 @@ npm run build # 构建生产版本
 npm install -g serve
 serve -s build
 ```
+
+前端开发需求
+需要修改 D:\sui\pgy\frontend\src\pages\HomePage.jsx 
+标题需修改 为 创意空间
+副标题是 创意去中心化交易平台 
+修改完善 创意创作系统
+完善 创意提交 弹出 创意提交表单
