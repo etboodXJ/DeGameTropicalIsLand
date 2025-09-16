@@ -1,60 +1,29 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Navbar from '../components/Navbar';
-import { SuiClient, getFullnodeUrl } from '@mysten/sui.js';
-import { useWallet } from '@mysten/sui-wallet-detection';
-import { Transaction } from '@mysten/sui.js/transactions';
+import { ConnectModal, useCurrentAccount, useSignAndExecuteTransactionBlock, useSuiClientQuery } from '@mysten/dapp-kit';
 
-// 初始化 Sui 客户端
-const suiClient = new SuiClient({ 
-  url: getFullnodeUrl('testnet') // 使用测试网络，生产环境改为 'mainnet'
-});
+// 合约相关配置
+const CONTRACT_PACKAGE_ID = '0x...'; // 需要替换为实际的合约包ID（部署合约后获取）
+const CREATIVE_MODULE = 'creative';
+const CREATIVE_FUNCTION = 'create_creative';
 
 const HomePage = () => {
   const [showSubmitForm, setShowSubmitForm] = useState(false);
-  const [wallet, connectWallet] = useWallet();
-  const [isConnected, setIsConnected] = useState(false);
-  const [userAddress, setUserAddress] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // 合约相关配置
-  const CONTRACT_PACKAGE_ID = '0x...'; // 需要替换为实际的合约包ID（部署合约后获取）
-  const CREATIVE_MODULE = 'creative';
-  const CREATIVE_FUNCTION = 'create_creative';
+  // 使用 dapp-kit hooks
+  const currentAccount = useCurrentAccount();
+  const signAndExecuteTransactionBlock = useSignAndExecuteTransactionBlock();
+  const suiClient = useSuiClientQuery();
 
   // 部署合约后，请将 CONTRACT_PACKAGE_ID 替换为实际的包ID
   // 例如：const CONTRACT_PACKAGE_ID = '0x123...';
-
-  // 连接钱包
-  const handleConnectWallet = async () => {
-    try {
-      setLoading(true);
-      if (wallet) {
-        await wallet.connect();
-        setIsConnected(true);
-        setUserAddress(wallet.address);
-      }
-    } catch (error) {
-      console.error('连接钱包失败:', error);
-      alert('连接钱包失败，请重试');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // 断开钱包连接
-  const handleDisconnectWallet = () => {
-    if (wallet) {
-      wallet.disconnect();
-      setIsConnected(false);
-      setUserAddress('');
-    }
-  };
 
   // 提交创意到智能合约
   const handleSubmitIdea = async (e) => {
     e.preventDefault();
     
-    if (!isConnected) {
+    if (!currentAccount) {
       alert('请先连接钱包');
       return;
     }
@@ -67,24 +36,25 @@ const HomePage = () => {
       const category = formData.get('category');
       const tags = formData.get('tags').split(',').map(tag => tag.trim()).filter(tag => tag);
 
-      // 构建交易
-      const tx = new Transaction();
-      
-      // 调用合约创建创意
-      tx.moveCall({
-        target: `${CONTRACT_PACKAGE_ID}::${CREATIVE_MODULE}::${CREATIVE_FUNCTION}`,
-        arguments: [
-          tx.pure.string(title),
-          tx.pure.string(description),
-          tx.pure.string(''), // content 字段，可以为空或存储具体内容
-          tx.pure.string(category),
-          tx.pure.vector('string', tags),
-        ],
-      });
-
-      // 发送交易
-      const result = await wallet.signAndExecuteTransaction({
-        transaction: tx,
+      // 使用 signAndExecuteTransactionBlock
+      const result = await signAndExecuteTransactionBlock({
+        transactionBlock: (tx) => {
+          // 调用合约创建创意
+          tx.moveCall({
+            target: `${CONTRACT_PACKAGE_ID}::${CREATIVE_MODULE}::${CREATIVE_FUNCTION}`,
+            arguments: [
+              tx.pure.string(title),
+              tx.pure.string(description),
+              tx.pure.string(''), // content 字段，可以为空或存储具体内容
+              tx.pure.string(category),
+              tx.pure.vector('string', tags),
+            ],
+          });
+        },
+        options: {
+          showEffects: true,
+          showObjectChanges: true,
+        },
       });
 
       console.log('创意提交成功:', result);
@@ -102,13 +72,6 @@ const HomePage = () => {
     }
   };
 
-  // 检查钱包连接状态
-  useEffect(() => {
-    if (wallet && wallet.connected) {
-      setIsConnected(true);
-      setUserAddress(wallet.address);
-    }
-  }, [wallet]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50">
@@ -117,28 +80,6 @@ const HomePage = () => {
           <div>
             <h1 className="text-3xl font-bold text-indigo-600">创意空间</h1>
             <p className="text-indigo-400">创意去中心化交易平台</p>
-          </div>
-          <div className="flex items-center space-x-4">
-            {isConnected ? (
-              <div className="flex items-center space-x-2">
-                <span className="text-sm text-gray-600">钱包:</span>
-                <span className="text-sm font-medium text-indigo-600">{userAddress.slice(0, 6)}...{userAddress.slice(-4)}</span>
-                <button 
-                  onClick={handleDisconnectWallet}
-                  className="px-4 py-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors text-sm"
-                >
-                  断开
-                </button>
-              </div>
-            ) : (
-              <button 
-                onClick={handleConnectWallet}
-                disabled={loading}
-                className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 text-sm"
-              >
-                {loading ? '连接中...' : '连接 Sui 钱包'}
-              </button>
-            )}
           </div>
         </div>
       </header>
