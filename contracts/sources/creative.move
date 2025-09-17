@@ -493,10 +493,10 @@ module dgti::creative {
     public fun add_creative_to_shared(
         shared: &mut SharedCreatives,
         creative_id: ID,
-        ctx: &mut TxContext
+        _ctx: &mut TxContext
     ) {
         vector::push_back(&mut shared.creatives, creative_id);
-        shared.id = object::uid_from_address(tx_context::sender(ctx));
+        // UID 不能直接赋值，这里我们不需要更新 UID
     }
 
     // 获取所有创意ID
@@ -504,22 +504,25 @@ module dgti::creative {
         shared.creatives
     }
 
-    // 外部调用接口函数 - 提交创意到共享对象
-    public fun submit_creative_to_shared(
-        shared: &mut SharedCreatives,
+    // 外部调用入口函数 - 提交创意到共享对象
+    #[allow(lint(public_entry))]
+    entry fun submit_creative_to_shared(
         title: String,
         description: String,
         content: String,
         category: String,
         tags: vector<String>,
-        ctx: &mut TxContext
-    ): (Creative, ID) {
+        ctx: &mut TxContext,
+    ) {
         let sender = tx_context::sender(ctx);
         let now = tx_context::epoch(ctx);
         
+        let id = object::new(ctx);
+        let cid = object::uid_to_inner(&id);
+
         // 创建新的创意对象
         let creative = Creative {
-            id: object::new(ctx),
+            id,
             creator: sender,
             title,
             description,
@@ -534,25 +537,19 @@ module dgti::creative {
             encrypted_id: utf8(b""), // 初始化为空字符串
         };
 
-        // 获取创意ID
-        let creative_id = object::id(&creative);
-
         // 将创意添加到共享对象
-        add_creative_to_shared(shared, creative_id, ctx);
+        transfer::share_object(creative);
 
         // 发送创意提交事件
         let event = CreativeSubmitted {
             creator: sender,
-            title: creative.title,
-            description: creative.description,
-            category: creative.category,
+            title: title,
+            description: description,
+            category: category,
             created_at: now,
-            creative_id,
+            creative_id:cid,
         };
-        event::emit(ctx, event);
-
-        // 返回创意对象和ID
-        (creative, creative_id)
+        event::emit(event);
     }
 
     // 获取共享对象中的创意数量
@@ -563,7 +560,7 @@ module dgti::creative {
     // 检查创意是否在共享对象中
     public fun is_creative_in_shared(shared: &SharedCreatives, creative_id: ID): bool {
         let ids = shared.creatives;
-        let i = 0;
+        let mut i = 0;
         let len = vector::length(&ids);
         while (i < len) {
             if (vector::borrow(&ids, i) == &creative_id) {

@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import Navbar from '../components/Navbar';
-import { useCurrentAccount } from '@mysten/dapp-kit';
+import { useCurrentAccount, useSuiClient, useSignAndExecuteTransaction } from '@mysten/dapp-kit';
 import { Box, Container, Flex, Heading, Text } from '@radix-ui/themes';
 import { useNavigate } from 'react-router-dom';
+import { Transaction } from '@mysten/sui/transactions';
 
 const HomePage = () => {
   const [showSubmitForm, setShowSubmitForm] = useState(false);
@@ -11,14 +12,25 @@ const HomePage = () => {
 
   // 使用 dapp-kit hooks
   const currentAccount = useCurrentAccount();
+  const suiClient = useSuiClient();
+  const { mutate: signAndExecute } = useSignAndExecuteTransaction();
 
   // 处理创意作品点击
   const handleCreativeClick = (id: number) => {
     navigate(`/creative/${id}`);
   };
 
-  // 部署合约后，请将 CONTRACT_PACKAGE_ID 替换为实际的包ID
-  // 例如：const CONTRACT_PACKAGE_ID = '0x123...';
+  // 智能合约配置
+  // 注意：部署合约后，请将以下值替换为实际的值
+  const CONTRACT_PACKAGE_ID = '0x...'; // 部署合约后替换为实际的包ID
+  const SHARED_CREATIVES_OBJECT_ID = '0x...'; // 共享创意对象的ID
+
+  // 使用说明：
+  // 1. 部署 creative.move 智能合约到测试网
+  // 2. 创建 SharedCreatives 对象并记录其 ID
+  // 3. 将 CONTRACT_PACKAGE_ID 替换为实际的包ID
+  // 4. 将 SHARED_CREATIVES_OBJECT_ID 替换为实际的共享对象ID
+  // 5. 确保钱包已连接并切换到正确的网络
 
   // 提交创意到智能合约
   const handleSubmitIdea = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -29,10 +41,39 @@ const HomePage = () => {
       return;
     }
 
+    const formData = new FormData(e.currentTarget);
+    const title = formData.get('title') as string;
+    const description = formData.get('description') as string;
+    const category = formData.get('category') as string;
+    const tagsInput = formData.get('tags') as string;
+    
+    // 处理标签
+    const tags = tagsInput ? tagsInput.split(',').map(tag => tag.trim()) : [];
+
     setLoading(true);
     try {
-  // 暂时简化处理，只显示成功消息
-      console.log('创意提交表单已提交');
+      // 创建交易
+      const tx = new Transaction();
+      
+      // 调用智能合约的 submit_creative_to_shared 函数
+      // 注意：在 Move 中，entry 函数的 TxContext 由运行时自动提供
+      // 前端不需要传递 TxContext 参数
+      tx.moveCall({
+        target: `${CONTRACT_PACKAGE_ID}::creative::submit_creative_to_shared`,
+        arguments: [
+          tx.object(SHARED_CREATIVES_OBJECT_ID),
+          tx.pure.string(title),
+          tx.pure.string(description),
+          tx.pure.string(''), // content 字段，暂时为空
+          tx.pure.string(category),
+          tx.pure.vector('string', tags),
+        ],
+      });
+
+      // 执行交易
+      const result = await signAndExecute({ transaction: tx });
+      
+      console.log('创意提交成功:', result);
       alert('创意提交成功！等待审核。');
       setShowSubmitForm(false);
       
@@ -41,7 +82,7 @@ const HomePage = () => {
       
     } catch (error) {
       console.error('提交创意失败:', error);
-      alert('提交创意失败，请重试');
+      alert(`提交创意失败: ${error instanceof Error ? error.message : '请重试'}`);
     } finally {
       setLoading(false);
     }
