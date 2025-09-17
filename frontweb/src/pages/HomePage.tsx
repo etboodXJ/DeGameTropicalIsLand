@@ -58,9 +58,9 @@ const HomePage = () => {
                 placeholder="搜索创意资源..." 
                 className="w-full p-4 pl-12 rounded-2xl border border-gray-700/30 bg-white/10 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent text-white placeholder-gray-400"
               />
-              <svg className="absolute left-4 top-4.5 h-5 w-5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              {/* <svg className="absolute left-4 top-4.5 h-5 w-5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
+              </svg> */}
             </Box>
           </Box>
         </Box>
@@ -68,8 +68,8 @@ const HomePage = () => {
         {/* 创意创作系统 */}
         <Box className="mb-12">
           <Box className="text-center mb-8">
-            <Heading as="h2" size="6" className="text-white mb-4 animate-pulse-slow">创意创作系统</Heading>
-            <Text size="3" className="text-gray-400">释放您的创意潜能，构建去中心化未来</Text>
+            <Heading as="h2" size="6" className="text-black mb-6 animate-pulse-slow">创意创作系统</Heading>
+            <Text size="3" className="text-gray-500">释放您的创意潜能，构建去中心化未来</Text>
           </Box>
           
           <Flex className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -83,12 +83,12 @@ const HomePage = () => {
                   </svg>
                 </div>
               </Box>
-              <Heading as="h3" size="3" className="text-white mb-2">创意游戏概念</Heading>
-              <Text size="2" className="text-gray-400 mb-4">独特的游戏创意和概念设计，探索无限可能</Text>
+              <Heading as="h3" size="3" className="text-gray-100 mb-2">创意游戏概念</Heading>
+              <Text size="2" className="text-gray-500 mb-4">独特的游戏创意和概念设计，探索无限可能</Text>
               <Flex justify="between" align="center">
                 <Text className="text-blue-400 font-medium">创意价值</Text>
                 <button 
-                  className="px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg hover:from-blue-600 hover:to-purple-600 transition-all duration-300 text-sm glow"
+                  className="px-4 py-4 mt-4 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg hover:from-blue-600 hover:to-purple-600 transition-all duration-300 text-sm glow"
                   onClick={() => setShowSubmitForm(true)}
                 >
                   创意提交
@@ -106,12 +106,12 @@ const HomePage = () => {
                   </svg>
                 </div>
               </Box>
-              <Heading as="h3" size="3" className="text-white mb-2">数字艺术创作</Heading>
-              <Text size="2" className="text-gray-400 mb-4">创新的数字艺术作品和视觉体验</Text>
+              <Heading as="h3" size="3" className="text-gray-100 mb-2">数字艺术创作</Heading>
+              <Text size="2" className="text-gray-500 mb-4">创新的数字艺术作品和视觉体验</Text>
               <Flex justify="between" align="center">
                 <Text className="text-purple-400 font-medium">艺术价值</Text>
                 <button 
-                  className="px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600 transition-all duration-300 text-sm glow-purple"
+                  className="px-4 py-4 mt-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600 transition-all duration-300 text-sm glow-purple"
                   onClick={() => setShowSubmitForm(true)}
                 >
                   创意提交
@@ -128,12 +128,12 @@ const HomePage = () => {
                   </svg>
                 </div>
               </Box>
-              <Heading as="h3" size="3" className="text-white mb-2">技术创新方案</Heading>
-              <Text size="2" className="text-gray-400 mb-4">突破性的技术创新和解决方案</Text>
+              <Heading as="h3" size="3" className="text-gray-100 mb-2">技术创新方案</Heading>
+              <Text size="2" className="text-gray-500 mb-4">突破性的技术创新和解决方案</Text>
               <Flex justify="between" align="center">
                 <Text className="text-green-400 font-medium">技术价值</Text>
                 <button 
-                  className="px-4 py-2 bg-gradient-to-r from-green-500 to-blue-500 text-white rounded-lg hover:from-green-600 hover:to-blue-600 transition-all duration-300 text-sm glow"
+                  className="px-4 py-4 mt-4 bg-gradient-to-r from-green-500 to-blue-500 text-white rounded-lg hover:from-green-600 hover:to-blue-600 transition-all duration-300 text-sm glow"
                   onClick={() => setShowSubmitForm(true)}
                 >
                   创意提交

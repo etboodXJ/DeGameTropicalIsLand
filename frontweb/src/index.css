@@ -4,12 +4,35 @@
 
 /* 科技感背景 */
 .tech-bg {
-  background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
+  background: 
+    radial-gradient(ellipse at bottom, #1b2735 0%, #090a0f 100%),
+    linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
   position: relative;
   overflow: hidden;
 }
 
+/* 星空背景 */
 .tech-bg::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: 
+    radial-gradient(2px 2px at 20px 30px, #eee, transparent),
+    radial-gradient(2px 2px at 40px 70px, rgba(255,255,255,0.8), transparent),
+    radial-gradient(1px 1px at 50px 160px, #fff, transparent),
+    radial-gradient(1px 1px at 130px 40px, rgba(255,255,255,0.6), transparent),
+    radial-gradient(2px 2px at 80px 10px, #ddd, transparent);
+  background-repeat: repeat;
+  background-size: 200px 200px;
+  animation: stars 120s linear infinite;
+  opacity: 0.8;
+}
+
+/* 星星闪烁动画 */
+.tech-bg::after {
   content: '';
   position: absolute;
   top: 0;
@@ -81,6 +104,16 @@
   50% {
     background-size: 200% 200%;
     background-position: right center;
+  }
+}
+
+/* 星星闪烁动画 */
+@keyframes stars {
+  from {
+    transform: translateY(0px);
+  }
+  to {
+    transform: translateY(-200px);
   }
 }
 

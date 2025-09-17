@@ -21,7 +21,7 @@ const Navbar = () => {
       >
         <Flex align="center" gap="8">
           <Box>
-            <Text size="6" weight="bold" className="text-white">创意空间</Text>
+            <Text size="6" weight="bold" className="text-white mr-4">创意空间</Text>
             <Text size="3" className="text-gray-400">创意去中心化交易平台</Text>
           </Box>
           <Flex gap="6">
