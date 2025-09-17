@@ -6,6 +6,7 @@ module dgti::creative {
     use sui::object::{Self, UID, ID};
     use sui::tx_context::{Self, TxContext};
     use sui::vec_map::{Self, VecMap};
+    use sui::event;
     use std::vector;
     use std::option::{Self, Option};
     use dgti::points::{Self, PointsBalance};
@@ -82,6 +83,22 @@ module dgti::creative {
         total_expectations: u64,
         average_rating: u64,
         last_updated: u64,
+    }
+
+    // 创意提交事件
+    public struct CreativeSubmitted has copy, drop {
+        creator: address,
+        title: String,
+        description: String,
+        category: String,
+        created_at: u64,
+        creative_id: ID,
+    }
+
+    // 共享创意对象 - 用于存储所有创意的引用
+    public struct SharedCreatives has key {
+        id: UID,
+        creatives: vector<ID>,
     }
 
     // 创建新创意
@@ -462,5 +479,98 @@ module dgti::creative {
             stats.total_expectations,
             stats.average_rating
         )
+    }
+
+    // 创建共享创意对象
+    public fun create_shared_creatives(ctx: &mut TxContext): SharedCreatives {
+        SharedCreatives {
+            id: object::new(ctx),
+            creatives: vector::empty<ID>(),
+        }
+    }
+
+    // 添加创意到共享对象
+    public fun add_creative_to_shared(
+        shared: &mut SharedCreatives,
+        creative_id: ID,
+        ctx: &mut TxContext
+    ) {
+        vector::push_back(&mut shared.creatives, creative_id);
+        shared.id = object::uid_from_address(tx_context::sender(ctx));
+    }
+
+    // 获取所有创意ID
+    public fun get_all_creatives(shared: &SharedCreatives): vector<ID> {
+        shared.creatives
+    }
+
+    // 外部调用接口函数 - 提交创意到共享对象
+    public fun submit_creative_to_shared(
+        shared: &mut SharedCreatives,
+        title: String,
+        description: String,
+        content: String,
+        category: String,
+        tags: vector<String>,
+        ctx: &mut TxContext
+    ): (Creative, ID) {
+        let sender = tx_context::sender(ctx);
+        let now = tx_context::epoch(ctx);
+        
+        // 创建新的创意对象
+        let creative = Creative {
+            id: object::new(ctx),
+            creator: sender,
+            title,
+            description,
+            content,
+            status: STATUS_DRAFT,
+            created_at: now,
+            updated_at: now,
+            total_expectation: 0,
+            revenue: 0,
+            tags,
+            category,
+            encrypted_id: utf8(b""), // 初始化为空字符串
+        };
+
+        // 获取创意ID
+        let creative_id = object::id(&creative);
+
+        // 将创意添加到共享对象
+        add_creative_to_shared(shared, creative_id, ctx);
+
+        // 发送创意提交事件
+        let event = CreativeSubmitted {
+            creator: sender,
+            title: creative.title,
+            description: creative.description,
+            category: creative.category,
+            created_at: now,
+            creative_id,
+        };
+        event::emit(ctx, event);
+
+        // 返回创意对象和ID
+        (creative, creative_id)
+    }
+
+    // 获取共享对象中的创意数量
+    public fun get_creative_count(shared: &SharedCreatives): u64 {
+        vector::length(&shared.creatives)
+    }
+
+    // 检查创意是否在共享对象中
+    public fun is_creative_in_shared(shared: &SharedCreatives, creative_id: ID): bool {
+        let ids = shared.creatives;
+        let i = 0;
+        let len = vector::length(&ids);
+        while (i < len) {
+            if (vector::borrow(&ids, i) == &creative_id) {
+                return true
+            };
+            i = i + 1;
+        };
+        false
     }
 }
