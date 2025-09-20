@@ -52,9 +52,27 @@ module dgti::creative {
         tags: vector<String>,// 标签列表
         category: String,// 分类
         encrypted_id: String, // 加密内容ID，用于后期加密内容管理
+        follow: address,// 跟随创意对象的地址
+        prev: address,// 上一个创意对象的地址
+        fans: vector<address>,// 粉丝列表
+        list: vector<address>,// 创意列表 CreativeDetail的地址列表
     }
 
     // 创意实例
+    public struct CreativeDetail has key, store {
+        id: UID,
+        creator: address,// 创作者地址
+        title: String,// 创意标题
+        description: String,// 创意描述
+        content: String,// 创意内容
+        status: u8,// 创意状态，0: 未发布；1：已发布；2：下架
+        created_at: u64,// 创建时间
+        updated_at: u64,// 更新时间
+        tags: vector<String>,// 标签列表
+        category: String,// 分类
+        encrypted_id: String, // 加密内容ID，用于后期加密内容管理
+    }
+
     public struct CreativeInstance has key, store {
         id: UID,
         creative_id: ID,
@@ -127,6 +145,10 @@ module dgti::creative {
             tags,
             category,
             encrypted_id: utf8(b""), // 初始化为空字符串，后期可设置加密ID
+            follow: @0x0, // 初始化为零地址
+            prev: @0x0, // 初始化为零地址
+            fans: vector::empty<address>(), // 初始化为空向量
+            list: vector::empty<address>(), // 初始化为空向量
         }
     }
 
@@ -243,6 +265,10 @@ module dgti::creative {
             tags: _,
             category: _,
             encrypted_id: _,
+            follow: _,
+            prev: _,
+            fans: _,
+            list: _,
         } = creative;
         
         object::delete(id);
@@ -535,6 +561,10 @@ module dgti::creative {
             tags,
             category,
             encrypted_id: utf8(b""), // 初始化为空字符串
+            follow: @0x0, // 初始化为零地址
+            prev: @0x0, // 初始化为零地址
+            fans: vector::empty<address>(), // 初始化为空向量
+            list: vector::empty<address>(), // 初始化为空向量
         };
 
         // 将创意添加到共享对象
@@ -569,5 +599,386 @@ module dgti::creative {
             i = i + 1;
         };
         false
+    }
+
+    // ========== CreativeDetail 相关功能 ==========
+
+    // 创建新的 CreativeDetail
+    public fun create_creative_detail(
+        title: String,
+        description: String,
+        content: String,
+        category: String,
+        tags: vector<String>,
+        ctx: &mut TxContext
+    ): CreativeDetail {
+        let creator = tx_context::sender(ctx);
+        let now = tx_context::epoch(ctx);
+        
+        CreativeDetail {
+            id: object::new(ctx),
+            creator,
+            title,
+            description,
+            content,
+            status: STATUS_DRAFT,
+            created_at: now,
+            updated_at: now,
+            tags,
+            category,
+            encrypted_id: utf8(b""), // 初始化为空字符串，后期可设置加密ID
+        }
+    }
+
+    // 查询 CreativeDetail 信息
+    public fun get_creative_detail_info(detail: &CreativeDetail): (String, String, String, u8, address, u64) {
+        (
+            detail.title,
+            detail.description,
+            detail.category,
+            detail.status,
+            detail.creator,
+            detail.created_at
+        )
+    }
+
+    // 获取 CreativeDetail 状态
+    public fun get_creative_detail_status(detail: &CreativeDetail): u8 {
+        detail.status
+    }
+
+    // 获取 CreativeDetail 创作者地址
+    public fun get_creative_detail_creator(detail: &CreativeDetail): address {
+        detail.creator
+    }
+
+    // 获取 CreativeDetail 标签
+    public fun get_creative_detail_tags(detail: &CreativeDetail): vector<String> {
+        detail.tags
+    }
+
+    // 获取 CreativeDetail 分类
+    public fun get_creative_detail_category(detail: &CreativeDetail): String {
+        detail.category
+    }
+
+    // 获取 CreativeDetail 加密ID
+    public fun get_creative_detail_encrypted_id(detail: &CreativeDetail): &String {
+        &detail.encrypted_id
+    }
+
+    // 检查 CreativeDetail 是否设置了加密ID
+    public fun has_creative_detail_encrypted_id(detail: &CreativeDetail): bool {
+        !string::is_empty(&detail.encrypted_id)
+    }
+
+    // 更新 CreativeDetail 信息
+    public fun update_creative_detail(
+        detail: &mut CreativeDetail,
+        title: Option<String>,
+        description: Option<String>,
+        content: Option<String>,
+        category: Option<String>,
+        tags: Option<vector<String>>,
+        _ctx: &mut TxContext
+    ) {
+        // 验证创作者
+        assert!(detail.creator == tx_context::sender(_ctx), 1);
+        
+        // 验证状态 (只有草稿状态可以更新)
+        assert!(detail.status == STATUS_DRAFT, 2);
+        
+        // 更新字段
+        if (option::is_some(&title)) {
+            detail.title = option::destroy_some(title);
+        };
+        
+        if (option::is_some(&description)) {
+            detail.description = option::destroy_some(description);
+        };
+        
+        if (option::is_some(&content)) {
+            detail.content = option::destroy_some(content);
+        };
+        
+        if (option::is_some(&category)) {
+            detail.category = option::destroy_some(category);
+        };
+        
+        if (option::is_some(&tags)) {
+            detail.tags = option::destroy_some(tags);
+        };
+        
+        detail.updated_at = tx_context::epoch(_ctx);
+    }
+
+    // 提交 CreativeDetail 审核
+    public fun submit_creative_detail(
+        detail: &mut CreativeDetail,
+        _ctx: &mut TxContext
+    ) {
+        // 验证创作者
+        assert!(detail.creator == tx_context::sender(_ctx), 1);
+        
+        // 验证状态
+        assert!(detail.status == STATUS_DRAFT, 2);
+        
+        detail.status = STATUS_SUBMITTED;
+        detail.updated_at = tx_context::epoch(_ctx);
+    }
+
+    // 审核 CreativeDetail (管理员功能)
+    public fun review_creative_detail(
+        detail: &mut CreativeDetail,
+        approved: bool,
+        _ctx: &mut TxContext
+    ) {
+        // 验证状态
+        assert!(detail.status == STATUS_SUBMITTED || detail.status == STATUS_REVIEWING, 2);
+        
+        if (approved) {
+            detail.status = STATUS_PUBLISHED;
+        } else {
+            detail.status = STATUS_REJECTED;
+        };
+        
+        detail.updated_at = tx_context::epoch(_ctx);
+    }
+
+    // 发布 CreativeDetail
+    public fun publish_creative_detail(
+        detail: &mut CreativeDetail,
+        _ctx: &mut TxContext
+    ) {
+        // 验证创作者
+        assert!(detail.creator == tx_context::sender(_ctx), 1);
+        
+        // 验证状态
+        assert!(detail.status == STATUS_REVIEWING, 2);
+        
+        detail.status = STATUS_PUBLISHED;
+        detail.updated_at = tx_context::epoch(_ctx);
+    }
+
+    // 删除 CreativeDetail
+    public fun delete_creative_detail(
+        detail: CreativeDetail,
+        _ctx: &mut TxContext
+    ) {
+        // 验证创作者
+        assert!(detail.creator == tx_context::sender(_ctx), 1);
+        
+        // 验证状态 (只有草稿或拒绝状态可以删除)
+        assert!(detail.status == STATUS_DRAFT || detail.status == STATUS_REJECTED, 2);
+        
+        let CreativeDetail {
+            id,
+            creator: _,
+            title: _,
+            description: _,
+            content: _,
+            status: _,
+            created_at: _,
+            updated_at: _,
+            tags: _,
+            category: _,
+            encrypted_id: _,
+        } = detail;
+        
+        object::delete(id);
+    }
+
+    // 设置 CreativeDetail 加密ID
+    public fun set_creative_detail_encrypted_id(
+        detail: &mut CreativeDetail,
+        encrypted_id: String,
+        _ctx: &mut TxContext
+    ) {
+        // 验证创作者
+        assert!(detail.creator == tx_context::sender(_ctx), 1);
+        
+        // 验证状态 (只有草稿或已发布状态可以设置加密ID)
+        assert!(detail.status == STATUS_DRAFT || detail.status == STATUS_PUBLISHED, 2);
+        
+        // 验证加密ID不为空
+        assert!(!string::is_empty(&encrypted_id), 3);
+        
+        detail.encrypted_id = encrypted_id;
+        detail.updated_at = tx_context::epoch(_ctx);
+    }
+
+    // ========== Creative 与 CreativeDetail 交互功能 ==========
+
+    // 添加 CreativeDetail 到 Creative
+    public fun add_creative_detail_to_creative(
+        creative: &mut Creative,
+        detail_address: address,
+        _ctx: &mut TxContext
+    ) {
+        // 验证创作者
+        assert!(creative.creator == tx_context::sender(_ctx), 1);
+        
+        // 验证创意状态
+        assert!(creative.status == STATUS_DRAFT || creative.status == STATUS_PUBLISHED, 2);
+        
+        // 添加到列表
+        vector::push_back(&mut creative.list, detail_address);
+        creative.updated_at = tx_context::epoch(_ctx);
+    }
+
+    // 从 Creative 中删除 CreativeDetail
+    public fun remove_creative_detail_from_creative(
+        creative: &mut Creative,
+        detail_address: address,
+        _ctx: &mut TxContext
+    ) {
+        // 验证创作者
+        assert!(creative.creator == tx_context::sender(_ctx), 1);
+        
+        // 验证创意状态
+        assert!(creative.status == STATUS_DRAFT, 2);
+        
+        // 查找并删除 CreativeDetail
+        let details = &mut creative.list;
+        let mut i = 0;
+        let len = vector::length(details);
+        let mut found = false;
+        
+        while (i < len) {
+            if (vector::borrow(details, i) == &detail_address) {
+                vector::remove(details, i);
+                found = true;
+                break
+            };
+            i = i + 1;
+        };
+        
+        // 验证 CreativeDetail 存在
+        assert!(found, 3);
+        
+        creative.updated_at = tx_context::epoch(_ctx);
+    }
+
+    // 获取 Creative 中的所有 CreativeDetail 地址
+    public fun get_creative_details(creative: &Creative): vector<address> {
+        creative.list
+    }
+
+    // 获取 Creative 中的 CreativeDetail 数量
+    public fun get_creative_detail_count(creative: &Creative): u64 {
+        vector::length(&creative.list)
+    }
+
+    // 检查 Creative 是否包含指定的 CreativeDetail
+    public fun has_creative_detail(creative: &Creative, detail_address: address): bool {
+        let details = creative.list;
+        let mut i = 0;
+        let len = vector::length(&details);
+        while (i < len) {
+            if (vector::borrow(&details, i) == &detail_address) {
+                return true
+            };
+            i = i + 1;
+        };
+        false
+    }
+
+    // 添加粉丝到 Creative
+    public fun add_fan_to_creative(
+        creative: &mut Creative,
+        fan_address: address,
+        _ctx: &mut TxContext
+    ) {
+        // 验证创意状态
+        assert!(creative.status == STATUS_PUBLISHED, 1);
+        
+        // 添加到粉丝列表
+        vector::push_back(&mut creative.fans, fan_address);
+        creative.updated_at = tx_context::epoch(_ctx);
+    }
+
+    // 从 Creative 中移除粉丝
+    public fun remove_fan_from_creative(
+        creative: &mut Creative,
+        fan_address: address,
+        _ctx: &mut TxContext
+    ) {
+        // 验证创作者
+        assert!(creative.creator == tx_context::sender(_ctx), 1);
+        
+        // 验证创意状态
+        assert!(creative.status == STATUS_PUBLISHED, 2);
+        
+        // 查找并移除粉丝
+        let fans = &mut creative.fans;
+        let mut i = 0;
+        let len = vector::length(fans);
+        let mut found = false;
+        
+        while (i < len) {
+            if (vector::borrow(fans, i) == &fan_address) {
+                vector::remove(fans, i);
+                found = true;
+                break
+            };
+            i = i + 1;
+        };
+        
+        // 验证粉丝存在
+        assert!(found, 3);
+        
+        creative.updated_at = tx_context::epoch(_ctx);
+    }
+
+    // 获取 Creative 的粉丝列表
+    public fun get_creative_fans(creative: &Creative): vector<address> {
+        creative.fans
+    }
+
+    // 获取 Creative 的粉丝数量
+    public fun get_creative_fan_count(creative: &Creative): u64 {
+        vector::length(&creative.fans)
+    }
+
+    // 设置 Creative 的跟随地址
+    public fun set_creative_follow(
+        creative: &mut Creative,
+        follow_address: address,
+        _ctx: &mut TxContext
+    ) {
+        // 验证创作者
+        assert!(creative.creator == tx_context::sender(_ctx), 1);
+        
+        // 验证创意状态
+        assert!(creative.status == STATUS_DRAFT || creative.status == STATUS_PUBLISHED, 2);
+        
+        creative.follow = follow_address;
+        creative.updated_at = tx_context::epoch(_ctx);
+    }
+
+    // 获取 Creative 的跟随地址
+    public fun get_creative_follow(creative: &Creative): address {
+        creative.follow
+    }
+
+    // 设置 Creative 的上一个创意地址
+    public fun set_creative_prev(
+        creative: &mut Creative,
+        prev_address: address,
+        _ctx: &mut TxContext
+    ) {
+        // 验证创作者
+        assert!(creative.creator == tx_context::sender(_ctx), 1);
+        
+        // 验证创意状态
+        assert!(creative.status == STATUS_DRAFT || creative.status == STATUS_PUBLISHED, 2);
+        
+        creative.prev = prev_address;
+        creative.updated_at = tx_context::epoch(_ctx);
+    }
+
+    // 获取 Creative 的上一个创意地址
+    public fun get_creative_prev(creative: &Creative): address {
+        creative.prev
     }
 }
