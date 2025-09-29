@@ -328,16 +328,28 @@ const HomePage = () => {
                 ></textarea>
               </div>
               <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-300 mb-2">创意分类</label>
+                <label className="block text-sm font-medium text-gray-300 mb-2">创意类型</label>
                 <select 
                   className="w-full p-3 rounded-lg bg-white/10 border border-gray-700/30 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent text-white"
                   required
                 >
-                  <option value="" className="bg-gray-800">请选择分类</option>
-                  <option value="game" className="bg-gray-800">游戏创意</option>
-                  <option value="art" className="bg-gray-800">艺术创作</option>
-                  <option value="tech" className="bg-gray-800">技术创新</option>
-                  <option value="other" className="bg-gray-800">其他</option>
+                  <option value="" className="bg-gray-800">请选择创意类型</option>
+                  <option value="图文创意" className="bg-gray-800">图文创意</option>
+                  <option value="视频创意" className="bg-gray-800">视频创意</option>
+                  <option value="小说" className="bg-gray-800">小说</option>
+                  <option value="产品众筹" className="bg-gray-800">产品众筹</option>
+                  <option value="DAPP软件" className="bg-gray-800">DAPP软件</option>
+                  <option value="游戏" className="bg-gray-800">游戏</option>
+                  <option value="移动应用" className="bg-gray-800">移动应用</option>
+                  <option value="网站" className="bg-gray-800">网站</option>
+                  <option value="实体店" className="bg-gray-800">实体店</option>
+                  <option value="线下活动" className="bg-gray-800">线下活动</option>
+                  <option value="线下展览" className="bg-gray-800">线下展览</option>
+                  <option value="线下演出" className="bg-gray-800">线下演出</option>
+                  <option value="线下讲座" className="bg-gray-800">线下讲座</option>
+                  <option value="线下培训" className="bg-gray-800">线下培训</option>
+                  <option value="线下比赛" className="bg-gray-800">线下比赛</option>
+                  <option value="线下聚会" className="bg-gray-800">线下聚会</option>
                 </select>
               </div>
               <div className="mb-8">

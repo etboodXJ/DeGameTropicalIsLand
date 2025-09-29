@@ -37,6 +37,95 @@ module dgti::creative {
         }
     }
 
+    // 创意类型枚举
+    public enum CreativeType {
+        // 数字内容类
+        ImageText,      // 1. 图文创意
+        Video,          // 2. 视频创意
+        Novel,          // 3. 小说
+        
+        // 项目类
+        ProductCrowdFund,    // 4. 某产品众筹
+        DappSoftware,        // 5. 一个dapp软件
+        Game,                // 6. 某个游戏
+        MobileApp,           // 7. 某个app
+        Website,             // 8. 某个网站
+        
+        // 实体类
+        PhysicalStore,       // 9. 某个实体店
+        
+        // 活动类
+        OfflineEvent,        // 10. 某个线下活动
+        OfflineExhibition,   // 11. 某个线下展览
+        OfflinePerformance,  // 12. 某个线下演出
+        OfflineLecture,      // 13. 某个线下讲座
+        OfflineTraining,     // 14. 某个线下培训
+        OfflineCompetition,   // 15. 某个线下比赛
+        OfflineGathering,    // 16. 某个线下聚会
+    }
+
+    // 获取创意类型对应的字符串
+    public fun creative_type_to_string(creative_type: &CreativeType): String {
+        match (creative_type) {
+            CreativeType::ImageText => utf8(b"图文创意"),
+            CreativeType::Video => utf8(b"视频创意"),
+            CreativeType::Novel => utf8(b"小说"),
+            CreativeType::ProductCrowdFund => utf8(b"产品众筹"),
+            CreativeType::DappSoftware => utf8(b"DAPP软件"),
+            CreativeType::Game => utf8(b"游戏"),
+            CreativeType::MobileApp => utf8(b"移动应用"),
+            CreativeType::Website => utf8(b"网站"),
+            CreativeType::PhysicalStore => utf8(b"实体店"),
+            CreativeType::OfflineEvent => utf8(b"线下活动"),
+            CreativeType::OfflineExhibition => utf8(b"线下展览"),
+            CreativeType::OfflinePerformance => utf8(b"线下演出"),
+            CreativeType::OfflineLecture => utf8(b"线下讲座"),
+            CreativeType::OfflineTraining => utf8(b"线下培训"),
+            CreativeType::OfflineCompetition => utf8(b"线下比赛"),
+            CreativeType::OfflineGathering => utf8(b"线下聚会"),
+        }
+    }
+
+    // 从字符串获取创意类型
+    public fun string_to_creative_type(type_str: &String): CreativeType {
+        if (string::eq(type_str, &utf8(b"图文创意"))) {
+            return CreativeType::ImageText
+        } else if (string::eq(type_str, &utf8(b"视频创意"))) {
+            return CreativeType::Video
+        } else if (string::eq(type_str, &utf8(b"小说"))) {
+            return CreativeType::Novel
+        } else if (string::eq(type_str, &utf8(b"产品众筹"))) {
+            return CreativeType::ProductCrowdFund
+        } else if (string::eq(type_str, &utf8(b"DAPP软件"))) {
+            return CreativeType::DappSoftware
+        } else if (string::eq(type_str, &utf8(b"游戏"))) {
+            return CreativeType::Game
+        } else if (string::eq(type_str, &utf8(b"移动应用"))) {
+            return CreativeType::MobileApp
+        } else if (string::eq(type_str, &utf8(b"网站"))) {
+            return CreativeType::Website
+        } else if (string::eq(type_str, &utf8(b"实体店"))) {
+            return CreativeType::PhysicalStore
+        } else if (string::eq(type_str, &utf8(b"线下活动"))) {
+            return CreativeType::OfflineEvent
+        } else if (string::eq(type_str, &utf8(b"线下展览"))) {
+            return CreativeType::OfflineExhibition
+        } else if (string::eq(type_str, &utf8(b"线下演出"))) {
+            return CreativeType::OfflinePerformance
+        } else if (string::eq(type_str, &utf8(b"线下讲座"))) {
+            return CreativeType::OfflineLecture
+        } else if (string::eq(type_str, &utf8(b"线下培训"))) {
+            return CreativeType::OfflineTraining
+        } else if (string::eq(type_str, &utf8(b"线下比赛"))) {
+            return CreativeType::OfflineCompetition
+        } else if (string::eq(type_str, &utf8(b"线下聚会"))) {
+            return CreativeType::OfflineGathering
+        } else {
+            // 默认返回图文创意
+            return CreativeType::ImageText
+        }
+    }
+
     // 创意对象
     public struct Creative has key, store {
         id: UID,
@@ -44,6 +133,7 @@ module dgti::creative {
         title: String,// 创意标题
         description: String,// 创意描述
         content: String,// 创意内容
+        creative_type: CreativeType, // 创意类型
         status: u8,// 创意状态，0: 未发布；1：已发布；2：下架
         created_at: u64,// 创建时间
         updated_at: u64,// 更新时间
@@ -124,6 +214,7 @@ module dgti::creative {
         title: String,
         description: String,
         content: String,
+        creative_type: CreativeType,
         category: String,
         tags: vector<String>,
         ctx: &mut TxContext
@@ -137,6 +228,7 @@ module dgti::creative {
             title,
             description,
             content,
+            creative_type,
             status: STATUS_DRAFT,
             created_at: now,
             updated_at: now,
@@ -536,6 +628,7 @@ module dgti::creative {
         title: String,
         description: String,
         content: String,
+        creative_type: CreativeType,
         category: String,
         tags: vector<String>,
         ctx: &mut TxContext,
@@ -553,6 +646,7 @@ module dgti::creative {
             title,
             description,
             content,
+            creative_type,
             status: STATUS_DRAFT,
             created_at: now,
             updated_at: now,

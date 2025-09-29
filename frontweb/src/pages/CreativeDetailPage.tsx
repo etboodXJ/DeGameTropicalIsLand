@@ -10,6 +10,7 @@ const CreativeDetailPage = () => {
     id: 1,
     title: '科幻城市概念',
     description: '这是一个充满未来感的科幻城市概念设计，融合了先进的科技与可持续发展的理念。城市中摩天大楼高耸入云，飞行器在楼宇间穿梭，绿色空间与高科技完美结合。',
+    creativeType: '图文创意',
     category: '建筑设计',
     tags: ['科幻', '未来城市', '可持续发展', '建筑设计'],
     imageUrl: 'https://images.unsplash.com/photo-1518709268805-4e9042af2176?w=800&h=600&fit=crop',
@@ -48,6 +49,7 @@ const CreativeDetailPage = () => {
             <div className="absolute bottom-8 left-8 right-8 text-white">
               <Heading as="h1" size="8" className="mb-4">{creativeWork.title}</Heading>
               <div className="flex items-center gap-4 text-sm">
+                <span>类型: {creativeWork.creativeType}</span>
                 <span>作者: {creativeWork.author}</span>
                 <span>发布时间: {creativeWork.date}</span>
                 <span>浏览: {creativeWork.views}</span>
@@ -97,6 +99,10 @@ const CreativeDetailPage = () => {
             <Box className="glass rounded-2xl p-6 mb-6">
               <Heading as="h3" size="4" className="text-gray-100 mb-4">作品信息</Heading>
               <div className="space-y-3 text-gray-500">
+                <div>
+                  <Text size="2" className="font-medium">创意类型</Text>
+                  <Text size="1">{creativeWork.creativeType}</Text>
+                </div>
                 <div>
                   <Text size="2" className="font-medium">分类</Text>
                   <Text size="1">{creativeWork.category}</Text>
