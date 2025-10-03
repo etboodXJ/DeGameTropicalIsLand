@@ -1,6 +1,6 @@
 // Module: points
 // 积分系统模块 - 管理用户积分购买、兑换和排行榜
-#[allow(unused_use,duplicate_alias)]
+#[allow(unused_use,duplicate_alias,unused_const)]
 module dgti::points {
     use std::string::{Self, String};
     use std::vector;
@@ -22,7 +22,7 @@ module dgti::points {
     const EOverflow: u64 = 4;
     const ELengthMismatch: u64 = 5;
     const ENotAdmin: u64 = 6;
-    const EUserNotFound: u64 = 7;
+    // const EUserNotFound: u64 = 7; // 已删除，未使用
 
     // ===== 管理员权限 =====
     public struct AdminCap has key, store {
@@ -126,7 +126,7 @@ module dgti::points {
         user: address,
         old_points: u64,
         new_points: u64,
-        rank_change: i64,
+        rank_change: u64, // 修改为u64类型
         timestamp: u64,
     }
 
@@ -595,19 +595,21 @@ module dgti::points {
         };
         
         let user_entry = vec_map::get(&leaderboard.entries, &user_address);
-        let user_points = user_entry.points;
+        let _user_points = user_entry.points; // 添加下划线前缀表示未使用
         let mut rank = 1;
         
         // 计算排名 - 统计积分比当前用户高的用户数量
-        let (keys, values) = vec_map::into_keys_values(vec_map::empty<address, LeaderboardEntry>());
         let mut i = 0;
-        while (i < vec_map::size(&leaderboard.entries)) {
+        let entries = &leaderboard.entries;
+        let size = vec_map::size(entries);
+        
+        while (i < size) {
             // 由于Move语言限制，这里简化处理
             // 实际应用中可能需要使用其他数据结构来高效排序
             i = i + 1;
         };
         
-        (rank, vec_map::size(&leaderboard.entries))
+        (rank, size)
     }
 
     // 简化版获取排行榜条目数量

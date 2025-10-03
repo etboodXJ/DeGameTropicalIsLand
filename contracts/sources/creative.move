@@ -2,7 +2,7 @@
 // 创意管理系统模块 - 管理创意提交、实例和期待值
 #[allow(unused_use,duplicate_alias)]
 module dgti::creative {
-    use std::string::{Self, utf8,String};
+    use std::string::{Self, utf8, String};
     use sui::object::{Self, UID, ID};
     use sui::tx_context::{Self, TxContext};
     use sui::vec_map::{Self, VecMap};
@@ -38,7 +38,7 @@ module dgti::creative {
     }
 
     // 创意类型枚举
-    public enum CreativeType {
+    public enum CreativeType has store, copy, drop {
         // 数字内容类
         ImageText,      // 1. 图文创意
         Video,          // 2. 视频创意
@@ -88,37 +88,54 @@ module dgti::creative {
 
     // 从字符串获取创意类型
     public fun string_to_creative_type(type_str: &String): CreativeType {
-        if (string::eq(type_str, &utf8(b"图文创意"))) {
+        let image_text = utf8(b"图文创意");
+        let video = utf8(b"视频创意");
+        let novel = utf8(b"小说");
+        let product_crowd_fund = utf8(b"产品众筹");
+        let dapp_software = utf8(b"DAPP软件");
+        let game = utf8(b"游戏");
+        let mobile_app = utf8(b"移动应用");
+        let website = utf8(b"网站");
+        let physical_store = utf8(b"实体店");
+        let offline_event = utf8(b"线下活动");
+        let offline_exhibition = utf8(b"线下展览");
+        let offline_performance = utf8(b"线下演出");
+        let offline_lecture = utf8(b"线下讲座");
+        let offline_training = utf8(b"线下培训");
+        let offline_competition = utf8(b"线下比赛");
+        let offline_gathering = utf8(b"线下聚会");
+        
+        if (type_str == &image_text) {
             return CreativeType::ImageText
-        } else if (string::eq(type_str, &utf8(b"视频创意"))) {
+        } else if (type_str == &video) {
             return CreativeType::Video
-        } else if (string::eq(type_str, &utf8(b"小说"))) {
+        } else if (type_str == &novel) {
             return CreativeType::Novel
-        } else if (string::eq(type_str, &utf8(b"产品众筹"))) {
+        } else if (type_str == &product_crowd_fund) {
             return CreativeType::ProductCrowdFund
-        } else if (string::eq(type_str, &utf8(b"DAPP软件"))) {
+        } else if (type_str == &dapp_software) {
             return CreativeType::DappSoftware
-        } else if (string::eq(type_str, &utf8(b"游戏"))) {
+        } else if (type_str == &game) {
             return CreativeType::Game
-        } else if (string::eq(type_str, &utf8(b"移动应用"))) {
+        } else if (type_str == &mobile_app) {
             return CreativeType::MobileApp
-        } else if (string::eq(type_str, &utf8(b"网站"))) {
+        } else if (type_str == &website) {
             return CreativeType::Website
-        } else if (string::eq(type_str, &utf8(b"实体店"))) {
+        } else if (type_str == &physical_store) {
             return CreativeType::PhysicalStore
-        } else if (string::eq(type_str, &utf8(b"线下活动"))) {
+        } else if (type_str == &offline_event) {
             return CreativeType::OfflineEvent
-        } else if (string::eq(type_str, &utf8(b"线下展览"))) {
+        } else if (type_str == &offline_exhibition) {
             return CreativeType::OfflineExhibition
-        } else if (string::eq(type_str, &utf8(b"线下演出"))) {
+        } else if (type_str == &offline_performance) {
             return CreativeType::OfflinePerformance
-        } else if (string::eq(type_str, &utf8(b"线下讲座"))) {
+        } else if (type_str == &offline_lecture) {
             return CreativeType::OfflineLecture
-        } else if (string::eq(type_str, &utf8(b"线下培训"))) {
+        } else if (type_str == &offline_training) {
             return CreativeType::OfflineTraining
-        } else if (string::eq(type_str, &utf8(b"线下比赛"))) {
+        } else if (type_str == &offline_competition) {
             return CreativeType::OfflineCompetition
-        } else if (string::eq(type_str, &utf8(b"线下聚会"))) {
+        } else if (type_str == &offline_gathering) {
             return CreativeType::OfflineGathering
         } else {
             // 默认返回图文创意
@@ -361,6 +378,7 @@ module dgti::creative {
             prev: _,
             fans: _,
             list: _,
+            creative_type: _,
         } = creative;
         
         object::delete(id);
@@ -628,7 +646,7 @@ module dgti::creative {
         title: String,
         description: String,
         content: String,
-        creative_type: CreativeType,
+        creative_type: u8,
         category: String,
         tags: vector<String>,
         ctx: &mut TxContext,
@@ -639,6 +657,43 @@ module dgti::creative {
         let id = object::new(ctx);
         let cid = object::uid_to_inner(&id);
 
+        // 将creative_type转换为枚举
+        let creative_type_enum = if (creative_type == 0) {
+            CreativeType::ImageText
+        } else if (creative_type == 1) {
+            CreativeType::Video
+        } else if (creative_type == 2) {
+            CreativeType::Novel
+        } else if (creative_type == 3) {
+            CreativeType::ProductCrowdFund
+        } else if (creative_type == 4) {
+            CreativeType::DappSoftware
+        } else if (creative_type == 5) {
+            CreativeType::Game
+        } else if (creative_type == 6) {
+            CreativeType::MobileApp
+        } else if (creative_type == 7) {
+            CreativeType::Website
+        } else if (creative_type == 8) {
+            CreativeType::PhysicalStore
+        } else if (creative_type == 9) {
+            CreativeType::OfflineEvent
+        } else if (creative_type == 10) {
+            CreativeType::OfflineExhibition
+        } else if (creative_type == 11) {
+            CreativeType::OfflinePerformance
+        } else if (creative_type == 12) {
+            CreativeType::OfflineLecture
+        } else if (creative_type == 13) {
+            CreativeType::OfflineTraining
+        } else if (creative_type == 14) {
+            CreativeType::OfflineCompetition
+        } else if (creative_type == 15) {
+            CreativeType::OfflineGathering
+        } else {
+            CreativeType::ImageText
+        };
+
         // 创建新的创意对象
         let creative = Creative {
             id,
@@ -646,7 +701,7 @@ module dgti::creative {
             title,
             description,
             content,
-            creative_type,
+            creative_type: creative_type_enum,
             status: STATUS_DRAFT,
             created_at: now,
             updated_at: now,

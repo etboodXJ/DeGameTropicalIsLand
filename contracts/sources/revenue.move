@@ -13,7 +13,7 @@ module dgti::revenue {
     use std::vector;
     use std::option::{Self, Option};
     use dgti::creative::{Self, Creative};
-    use dgti::points::{Self, PointsBalance};
+    use dgti::points::{Self, PointsBalance, AdminCap, PointsHistory};
 
     // 分配比例常量 (basis points, 1/10000)
     const PLATFORM_FEE_RATIO: u64 = 1000;    // 10%
@@ -210,6 +210,8 @@ module dgti::revenue {
     public fun claim_user_reward(
         reward: &mut UserReward,
         points_balance: &mut PointsBalance,
+        points_history: &mut PointsHistory,
+        admin_cap: &AdminCap,
         _ctx: &mut TxContext
     ): bool {
         // 验证用户
@@ -222,7 +224,14 @@ module dgti::revenue {
         assert!(points::is_owner(points_balance, reward.user), 3);
         
         // 发放积分奖励
-        points::reward_points(points_balance, reward.reward_amount, _ctx);
+        points::reward_points(
+            admin_cap,
+            points_balance,
+            points_history,
+            reward.reward_amount,
+            string::utf8(b"User reward claim"),
+            _ctx
+        );
         
         // 标记为已领取
         reward.claimed = true;
