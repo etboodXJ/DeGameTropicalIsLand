@@ -2,6 +2,28 @@
 @tailwind components;
 @tailwind utilities;
 
+/* 网络切换动画 */
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* 网络选择器样式 */
+.network-selector {
+  transition: all 0.2s ease;
+}
+
+.network-selector:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
 /* 科技感背景 */
 .tech-bg {
   background: 

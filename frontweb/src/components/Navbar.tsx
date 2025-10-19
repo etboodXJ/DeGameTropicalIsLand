@@ -1,7 +1,13 @@
 import { ConnectButton } from '@mysten/dapp-kit';
 import { Box, Flex, Text } from '@radix-ui/themes';
+import NetworkSelector from './NetworkSelector';
+import WalletBalance from './WalletBalance';
+import LanguageSelector from './LanguageSelector';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const Navbar = () => {
+  const { t } = useLanguage();
+  
   return (
     <Box 
       className="glass backdrop-blur-sm border-b border-gray-700/30"
@@ -21,18 +27,21 @@ const Navbar = () => {
       >
         <Flex align="center" gap="8">
           <Box>
-            <Text size="6" weight="bold" className="text-white mr-4">创意空间</Text>
-            <Text size="3" className="text-gray-400">创意去中心化交易平台</Text>
+            <Text size="6" weight="bold" className="text-white mr-4">{t('nav.title')}</Text>
+            <Text size="3" className="text-gray-400">{t('nav.subtitle')}</Text>
           </Box>
           <Flex gap="6">
-            <Text className="text-gray-300 font-medium cursor-pointer hover:text-white transition-colors">首页</Text>
-            <Text className="text-gray-400 hover:text-gray-200 cursor-pointer transition-colors">资源市场</Text>
-            <Text className="text-gray-400 hover:text-gray-200 cursor-pointer transition-colors">我的资产</Text>
+            <Text className="text-gray-300 font-medium cursor-pointer hover:text-white transition-colors">{t('nav.home')}</Text>
+            <Text className="text-gray-400 hover:text-gray-200 cursor-pointer transition-colors">{t('nav.market')}</Text>
+            <Text className="text-gray-400 hover:text-gray-200 cursor-pointer transition-colors">{t('nav.assets')}</Text>
           </Flex>
         </Flex>
-        <Box>
+        <Flex align="center" gap="3">
+          <WalletBalance />
+          <LanguageSelector />
+          <NetworkSelector />
           <ConnectButton />
-        </Box>
+        </Flex>
       </Flex>
     </Box>
   );
