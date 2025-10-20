@@ -93,6 +93,7 @@ module dgti::creative {
     }
 
     // 从字符串获取创意类型
+    #[allow(dead_code)]
     public fun string_to_creative_type(type_str: &String): CreativeType {
         let image_text = utf8(b"图文创意");
         let video = utf8(b"视频创意");
@@ -629,6 +630,16 @@ module dgti::creative {
             id: object::new(ctx),
             creatives: vector::empty<ID>(),
         }
+    }
+
+    // Entry 函数：创建并共享创意对象
+    #[allow(lint(public_entry))]
+    entry fun create_and_share_creatives(ctx: &mut TxContext) {
+        let shared_creatives = SharedCreatives {
+            id: object::new(ctx),
+            creatives: vector::empty<ID>(),
+        };
+        transfer::share_object(shared_creatives);
     }
 
     // 添加创意到共享对象

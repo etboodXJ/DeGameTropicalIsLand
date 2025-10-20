@@ -586,6 +586,7 @@ module dgti::points {
     }
 
     // 获取用户排名
+    #[allow(unused_let_mut)]
     public fun get_user_rank(
         leaderboard: &Leaderboard,
         user_address: address

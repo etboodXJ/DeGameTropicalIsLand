@@ -38,3 +38,9 @@ coverage/
 
 # 临时目录
 local/
+scripts/
+*.bat
+
+# 临时文件
+DEPLOYMENT.md
+deployment_output.txt

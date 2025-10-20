@@ -1,91 +1,29 @@
 import React, { useState } from 'react';
 import Navbar from '../components/Navbar';
-import { useCurrentAccount, useSuiClient, useSignAndExecuteTransaction } from '@mysten/dapp-kit';
+import CreativeSubmitForm from '../components/CreativeSubmitForm';
+import CreativeList from '../components/CreativeList';
+import { useCurrentAccount } from '@mysten/dapp-kit';
 import { Box, Container, Flex, Heading, Text } from '@radix-ui/themes';
 import { useNavigate } from 'react-router-dom';
-import { Transaction } from '@mysten/sui/transactions';
+import { useNetworkAwareConfig } from '../hooks/useNetworkAwareConfig';
 
 const HomePage = () => {
   const [showSubmitForm, setShowSubmitForm] = useState(false);
-  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   // 使用 dapp-kit hooks
   const currentAccount = useCurrentAccount();
-  const suiClient = useSuiClient();
-  const { mutate: signAndExecute } = useSignAndExecuteTransaction();
+  const { isContractDeployed, network } = useNetworkAwareConfig();
 
   // 处理创意作品点击
   const handleCreativeClick = (id: number) => {
     navigate(`/creative/${id}`);
   };
 
-  // 智能合约配置
-  // 注意：部署合约后，请将以下值替换为实际的值
-  const CONTRACT_PACKAGE_ID = '0x...'; // 部署合约后替换为实际的包ID
-  const SHARED_CREATIVES_OBJECT_ID = '0x...'; // 共享创意对象的ID
-
-  // 使用说明：
-  // 1. 部署 creative.move 智能合约到测试网
-  // 2. 创建 SharedCreatives 对象并记录其 ID
-  // 3. 将 CONTRACT_PACKAGE_ID 替换为实际的包ID
-  // 4. 将 SHARED_CREATIVES_OBJECT_ID 替换为实际的共享对象ID
-  // 5. 确保钱包已连接并切换到正确的网络
-
-  // 提交创意到智能合约
-  const handleSubmitIdea = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    
-    if (!currentAccount) {
-      alert('请先连接钱包');
-      return;
-    }
-
-    const formData = new FormData(e.currentTarget);
-    const title = formData.get('title') as string;
-    const description = formData.get('description') as string;
-    const category = formData.get('category') as string;
-    const tagsInput = formData.get('tags') as string;
-    
-    // 处理标签
-    const tags = tagsInput ? tagsInput.split(',').map(tag => tag.trim()) : [];
-
-    setLoading(true);
-    try {
-      // 创建交易
-      const tx = new Transaction();
-      
-      // 调用智能合约的 submit_creative_to_shared 函数
-      // 注意：在 Move 中，entry 函数的 TxContext 由运行时自动提供
-      // 前端不需要传递 TxContext 参数
-      tx.moveCall({
-        target: `${CONTRACT_PACKAGE_ID}::creative::submit_creative_to_shared`,
-        arguments: [
-          tx.object(SHARED_CREATIVES_OBJECT_ID),
-          tx.pure.string(title),
-          tx.pure.string(description),
-          tx.pure.string(''), // content 字段，暂时为空
-          tx.pure.string(category),
-          tx.pure.vector('string', tags),
-        ],
-      });
-
-      // 执行交易
-      const result = await signAndExecute({ transaction: tx });
-      
-      console.log('创意提交成功:', result);
-      alert('创意提交成功！等待审核。');
-      setShowSubmitForm(false);
-      
-      // 重置表单
-      (e.target as HTMLFormElement).reset();
-      
-    } catch (error) {
-      console.error('提交创意失败:', error);
-      alert(`提交创意失败: ${error instanceof Error ? error.message : '请重试'}`);
-    } finally {
-      setLoading(false);
-    }
+  // 处理创意提交成功
+  const handleSubmitSuccess = () => {
+    console.log('创意提交成功');
+    // 可以在这里添加更多成功后的逻辑，比如刷新创意列表
   };
 
   function handeleGoto() {
@@ -141,8 +79,10 @@ const HomePage = () => {
               <Flex justify="between" align="center">
                 <Text className="text-blue-400 font-medium">创意价值</Text>
                 <button 
-                  className="px-4 py-4 mt-4 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg hover:from-blue-600 hover:to-purple-600 transition-all duration-300 text-sm glow"
+                  className="px-4 py-4 mt-4 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg hover:from-blue-600 hover:to-purple-600 transition-all duration-300 text-sm glow disabled:opacity-50 disabled:cursor-not-allowed"
                   onClick={() => setShowSubmitForm(true)}
+                  disabled={!currentAccount || !isContractDeployed}
+                  title={!currentAccount ? '请先连接钱包' : !isContractDeployed ? '合约未部署' : ''}
                 >
                   创意提交
                 </button>
@@ -164,8 +104,10 @@ const HomePage = () => {
               <Flex justify="between" align="center">
                 <Text className="text-purple-400 font-medium">艺术价值</Text>
                 <button 
-                  className="px-4 py-4 mt-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600 transition-all duration-300 text-sm glow-purple"
+                  className="px-4 py-4 mt-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600 transition-all duration-300 text-sm glow-purple disabled:opacity-50 disabled:cursor-not-allowed"
                   onClick={() => setShowSubmitForm(true)}
+                  disabled={!currentAccount || !isContractDeployed}
+                  title={!currentAccount ? '请先连接钱包' : !isContractDeployed ? '合约未部署' : ''}
                 >
                   创意提交
                 </button>
@@ -186,8 +128,10 @@ const HomePage = () => {
               <Flex justify="between" align="center">
                 <Text className="text-green-400 font-medium">技术价值</Text>
                 <button 
-                  className="px-4 py-4 mt-4 bg-gradient-to-r from-green-500 to-blue-500 text-white rounded-lg hover:from-green-600 hover:to-blue-600 transition-all duration-300 text-sm glow"
+                  className="px-4 py-4 mt-4 bg-gradient-to-r from-green-500 to-blue-500 text-white rounded-lg hover:from-green-600 hover:to-blue-600 transition-all duration-300 text-sm glow disabled:opacity-50 disabled:cursor-not-allowed"
                   onClick={() => setShowSubmitForm(true)}
+                  disabled={!currentAccount || !isContractDeployed}
+                  title={!currentAccount ? '请先连接钱包' : !isContractDeployed ? '合约未部署' : ''}
                 >
                   创意提交
                 </button>
@@ -291,87 +235,38 @@ const HomePage = () => {
             </button>
           </Box>
         </Box>
+
+        {/* 创意列表展示 */}
+        <Box className="mb-12">
+          <CreativeList limit={6} />
+        </Box>
+        
+        {/* 网络状态提示 */}
+        {!isContractDeployed && (
+          <Box className="mb-8">
+            <div className="glass rounded-lg p-4 border border-yellow-500/30 bg-yellow-500/10">
+              <div className="flex items-center space-x-3">
+                <svg className="w-5 h-5 text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.314 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                </svg>
+                <div>
+                  <Text className="text-yellow-300 font-medium">合约未部署</Text>
+                  <Text size="2" className="text-yellow-400/80">
+                    当前网络: {network} - 请先部署智能合约后再使用创意提交功能
+                  </Text>
+                </div>
+              </div>
+            </div>
+          </Box>
+        )}
       </Container>
       
       {/* 创意提交表单 */}
-      {showSubmitForm && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="glass rounded-2xl p-8 w-full max-w-md mx-4 border border-gray-700/30">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-2xl font-semibold text-white">创意提交表单</h3>
-              <button 
-                className="text-gray-400 hover:text-white transition-colors"
-                onClick={() => setShowSubmitForm(false)}
-              >
-                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            <form onSubmit={handleSubmitIdea}>
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-300 mb-2">创意标题</label>
-                <input 
-                  name="title"
-                  type="text" 
-                  className="w-full p-3 rounded-lg bg-white/10 border border-gray-700/30 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent text-white placeholder-gray-400"
-                  placeholder="请输入创意标题"
-                  required
-                />
-              </div>
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-300 mb-2">创意描述</label>
-                <textarea 
-                  name="description"
-                  className="w-full p-3 rounded-lg bg-white/10 border border-gray-700/30 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent text-white placeholder-gray-400"
-                  rows={4}
-                  placeholder="请详细描述您的创意..."
-                  required
-                ></textarea>
-              </div>
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-300 mb-2">创意分类</label>
-                <select 
-                  name="category"
-                  className="w-full p-3 rounded-lg bg-white/10 border border-gray-700/30 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent text-white"
-                  required
-                >
-                  <option value="" className="bg-gray-800">请选择创意分类</option>
-                  <option value="idea" className="bg-gray-800">创意想法</option>
-                  <option value="prototype" className="bg-gray-800">原型Demo</option>
-                  <option value="project" className="bg-gray-800">完整项目</option>
-                  <option value="resource" className="bg-gray-800">创意资源</option>
-                </select>
-              </div>
-              <div className="mb-8">
-                <label className="block text-sm font-medium text-gray-300 mb-2">标签 (用逗号分隔)</label>
-                <input 
-                  name="tags"
-                  type="text" 
-                  className="w-full p-3 rounded-lg bg-white/10 border border-gray-700/30 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent text-white placeholder-gray-400"
-                  placeholder="例如: game,ai,blockchain"
-                />
-              </div>
-              <div className="flex justify-end space-x-4">
-                <button 
-                  type="button"
-                  className="px-6 py-2 text-gray-300 hover:text-white transition-colors"
-                  onClick={() => setShowSubmitForm(false)}
-                >
-                  取消
-                </button>
-                <button 
-                  type="submit"
-                  className="px-6 py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg hover:from-blue-600 hover:to-purple-600 transition-all duration-300"
-                  disabled={loading}
-                >
-                  {loading ? '提交中...' : '提交创意'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <CreativeSubmitForm 
+        isOpen={showSubmitForm}
+        onClose={() => setShowSubmitForm(false)}
+        onSuccess={handleSubmitSuccess}
+      />
       
       <Box className="p-6 border-t border-gray-700/30">
         <Text className="text-center text-gray-400">© 2023 创意空间 - 构建去中心化未来</Text>
