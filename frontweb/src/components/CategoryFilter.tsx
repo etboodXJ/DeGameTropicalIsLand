@@ -35,7 +35,10 @@ const CategoryFilter: React.FC<CategoryFilterProps> = ({ onFilterChange, selecte
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6">
+    <div 
+      className="bg-white rounded-lg shadow-md p-6"
+      style={{ pointerEvents: 'auto', position: 'relative', zIndex: 1000 }}
+    >
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-lg font-semibold text-gray-800">筛选条件</h3>
         {getSelectedCount() > 0 && (
@@ -59,6 +62,7 @@ const CategoryFilter: React.FC<CategoryFilterProps> = ({ onFilterChange, selecte
                 ? 'bg-white text-blue-600 shadow-sm'
                 : 'text-gray-600 hover:text-gray-800'
             }`}
+            style={{ pointerEvents: 'auto', position: 'relative', zIndex: 1001 }}
           >
             {config.title}
           </button>
@@ -74,6 +78,7 @@ const CategoryFilter: React.FC<CategoryFilterProps> = ({ onFilterChange, selecte
             <label
               key={option.value}
               className="flex items-center space-x-3 cursor-pointer hover:bg-gray-50 p-2 rounded-md"
+              style={{ pointerEvents: 'auto', position: 'relative', zIndex: 1001 }}
             >
               <input
                 type="checkbox"
