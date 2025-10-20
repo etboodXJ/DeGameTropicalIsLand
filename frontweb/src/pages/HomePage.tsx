@@ -285,9 +285,9 @@ const HomePage = () => {
           <Box className="text-center mt-8">
             <button 
               className="px-8 py-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg hover:from-blue-600 hover:to-purple-600 transition-all duration-300 font-medium"
-              onClick={() => alert('跳转到创意作品展示页面')}
+              onClick={() => navigate('/explore')}
             >
-              查看更多作品
+              浏览创意分类
             </button>
           </Box>
         </Box>
@@ -312,6 +312,7 @@ const HomePage = () => {
               <div className="mb-6">
                 <label className="block text-sm font-medium text-gray-300 mb-2">创意标题</label>
                 <input 
+                  name="title"
                   type="text" 
                   className="w-full p-3 rounded-lg bg-white/10 border border-gray-700/30 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent text-white placeholder-gray-400"
                   placeholder="请输入创意标题"
@@ -321,6 +322,7 @@ const HomePage = () => {
               <div className="mb-6">
                 <label className="block text-sm font-medium text-gray-300 mb-2">创意描述</label>
                 <textarea 
+                  name="description"
                   className="w-full p-3 rounded-lg bg-white/10 border border-gray-700/30 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent text-white placeholder-gray-400"
                   rows={4}
                   placeholder="请详细描述您的创意..."
@@ -328,36 +330,26 @@ const HomePage = () => {
                 ></textarea>
               </div>
               <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-300 mb-2">创意类型</label>
+                <label className="block text-sm font-medium text-gray-300 mb-2">创意分类</label>
                 <select 
+                  name="category"
                   className="w-full p-3 rounded-lg bg-white/10 border border-gray-700/30 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent text-white"
                   required
                 >
-                  <option value="" className="bg-gray-800">请选择创意类型</option>
-                  <option value="图文创意" className="bg-gray-800">图文创意</option>
-                  <option value="视频创意" className="bg-gray-800">视频创意</option>
-                  <option value="小说" className="bg-gray-800">小说</option>
-                  <option value="产品众筹" className="bg-gray-800">产品众筹</option>
-                  <option value="DAPP软件" className="bg-gray-800">DAPP软件</option>
-                  <option value="游戏" className="bg-gray-800">游戏</option>
-                  <option value="移动应用" className="bg-gray-800">移动应用</option>
-                  <option value="网站" className="bg-gray-800">网站</option>
-                  <option value="实体店" className="bg-gray-800">实体店</option>
-                  <option value="线下活动" className="bg-gray-800">线下活动</option>
-                  <option value="线下展览" className="bg-gray-800">线下展览</option>
-                  <option value="线下演出" className="bg-gray-800">线下演出</option>
-                  <option value="线下讲座" className="bg-gray-800">线下讲座</option>
-                  <option value="线下培训" className="bg-gray-800">线下培训</option>
-                  <option value="线下比赛" className="bg-gray-800">线下比赛</option>
-                  <option value="线下聚会" className="bg-gray-800">线下聚会</option>
+                  <option value="" className="bg-gray-800">请选择创意分类</option>
+                  <option value="idea" className="bg-gray-800">创意想法</option>
+                  <option value="prototype" className="bg-gray-800">原型Demo</option>
+                  <option value="project" className="bg-gray-800">完整项目</option>
+                  <option value="resource" className="bg-gray-800">创意资源</option>
                 </select>
               </div>
               <div className="mb-8">
                 <label className="block text-sm font-medium text-gray-300 mb-2">标签 (用逗号分隔)</label>
                 <input 
+                  name="tags"
                   type="text" 
                   className="w-full p-3 rounded-lg bg-white/10 border border-gray-700/30 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent text-white placeholder-gray-400"
-                  placeholder="例如: 创意, 游戏, 独特"
+                  placeholder="例如: game,ai,blockchain"
                 />
               </div>
               <div className="flex justify-end space-x-4">

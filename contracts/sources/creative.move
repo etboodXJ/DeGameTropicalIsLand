@@ -17,6 +17,12 @@ module dgti::creative {
     const STATUS_REVIEWING: u8 = 2;  // 审核中
     const STATUS_PUBLISHED: u8 = 3;  // 已发布
     const STATUS_REJECTED: u8 = 4;  // 已拒绝
+    
+    // 主分类常量
+    const CATEGORY_IDEA: vector<u8> = b"idea";
+    const CATEGORY_PROTOTYPE: vector<u8> = b"prototype";
+    const CATEGORY_PROJECT: vector<u8> = b"project";
+    const CATEGORY_RESOURCE: vector<u8> = b"resource";
 
     public enum Status {
         Draft,
@@ -1129,5 +1135,80 @@ module dgti::creative {
     // 获取 Creative 的上一个创意地址
     public fun get_creative_prev(creative: &Creative): address {
         creative.prev
+    }
+    
+    // ========== 新增查询接口 ==========
+    
+    // 按主分类查询创意
+    public fun is_category_match(creative: &Creative, category: &String): bool {
+        &creative.category == category
+    }
+    
+    // 按标签查询 (支持多标签AND/OR查询)
+    public fun has_tags(creative: &Creative, tags: &vector<String>, match_all: bool): bool {
+        let creative_tags = &creative.tags;
+        let mut matched_count = 0;
+        let target_count = vector::length(tags);
+        
+        let mut i = 0;
+        while (i < target_count) {
+            let target_tag = vector::borrow(tags, i);
+            if (vector::contains(creative_tags, target_tag)) {
+                matched_count = matched_count + 1;
+                if (!match_all) {
+                    return true // OR查询，匹配一个即返回
+                }
+            };
+            i = i + 1;
+        };
+        
+        if (match_all) {
+            matched_count == target_count // AND查询，必须全部匹配
+        } else {
+            false // OR查询但没有匹配任何标签
+        }
+    }
+    
+    // 复合查询：分类 + 标签
+    public fun matches_category_and_tags(
+        creative: &Creative, 
+        category: &String, 
+        tags: &vector<String>,
+        match_all_tags: bool
+    ): bool {
+        is_category_match(creative, category) && has_tags(creative, tags, match_all_tags)
+    }
+    
+    // 成熟度筛选：检查是否属于指定成熟度分类
+    public fun is_maturity_match(creative: &Creative, categories: &vector<String>): bool {
+        let creative_category = &creative.category;
+        vector::contains(categories, creative_category)
+    }
+    
+    // 获取分类常量字符串
+    public fun get_category_idea(): String {
+        utf8(CATEGORY_IDEA)
+    }
+    
+    public fun get_category_prototype(): String {
+        utf8(CATEGORY_PROTOTYPE)
+    }
+    
+    public fun get_category_project(): String {
+        utf8(CATEGORY_PROJECT)
+    }
+    
+    public fun get_category_resource(): String {
+        utf8(CATEGORY_RESOURCE)
+    }
+    
+    // 验证分类是否有效
+    public fun is_valid_category(category: &String): bool {
+        let idea = utf8(CATEGORY_IDEA);
+        let prototype = utf8(CATEGORY_PROTOTYPE);
+        let project = utf8(CATEGORY_PROJECT);
+        let resource = utf8(CATEGORY_RESOURCE);
+        
+        category == &idea || category == &prototype || category == &project || category == &resource
     }
 }
