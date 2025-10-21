@@ -20,7 +20,7 @@
 sui move new dgti  # 创建新项目
 sui move build  # 构建合约
 sui move test   # 运行测试
-sui client publish --gas-budget 10000000  # 发布合约
+sui client publish --gas-budget 1000000000  # 发布合约
 ```
 
 ## 结构体设计

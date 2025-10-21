@@ -184,7 +184,7 @@ export const NAVIGATION_MENU = [
 // 筛选器配置
 export const FILTER_CONFIG = {
   maturity: {
-    title: '成熟度',
+    title: '项目成熟度',
     options: [
       { value: CATEGORIES.MAIN.IDEA, label: '想法' },
       { value: CATEGORIES.MAIN.PROTOTYPE, label: '原型' },

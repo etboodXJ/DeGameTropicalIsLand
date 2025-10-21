@@ -1,13 +1,16 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import CategoryFilter from '../components/CategoryFilter';
 import CreativeCard from '../components/CreativeCard';
+import CreativeTypeFilter from '../components/CreativeTypeFilter';
 import SimpleNavigation from '../components/SimpleNavigation';
 import TestNav from '../components/TestNav';
+import Navbar from '../components/Navbar';
+import { CreativeTypeId } from '../config/creativeTypes';
 import { filterCreatives, filterByCategory, searchCreatives, sortCreatives, Creative, FilterOptions } from '../utils/categoryUtils';
 import { NAVIGATION_MENU } from '../config/categories';
 import { useSuiClient } from '@mysten/dapp-kit';
 import { useNetworkAwareConfig } from '../hooks/useNetworkAwareConfig';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 interface CategorySelection {
   category?: string;
@@ -19,13 +22,23 @@ const CreativeExplore: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<CategorySelection | null>(null);
   const [filters, setFilters] = useState<FilterOptions>({});
+  const [selectedTypes, setSelectedTypes] = useState<CreativeTypeId[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('created_at');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   
   const suiClient = useSuiClient();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { packageId, isContractDeployed } = useNetworkAwareConfig();
+
+  // 从 URL 参数获取搜索词
+  useEffect(() => {
+    const searchFromUrl = searchParams.get('search');
+    if (searchFromUrl) {
+      setSearchTerm(searchFromUrl);
+    }
+  }, [searchParams]);
 
   // 模拟数据加载
   useEffect(() => {
@@ -61,7 +74,8 @@ const CreativeExplore: React.FC = () => {
               creator: data.creator,
               created_at: parseInt(data.created_at),
               total_expectation: 0,
-              views: 0
+              views: 0,
+              creative_type: data.creative_type !== undefined ? parseInt(data.creative_type) : 0
             });
           }
         }
@@ -90,6 +104,14 @@ const CreativeExplore: React.FC = () => {
     // 按筛选条件筛选
     result = filterCreatives(result, filters);
 
+    // 按创意类型筛选
+    if (selectedTypes.length > 0) {
+      result = result.filter(creative => 
+        creative.creative_type !== undefined && 
+        selectedTypes.includes(creative.creative_type as CreativeTypeId)
+      );
+    }
+
     // 搜索
     result = searchCreatives(result, searchTerm);
 
@@ -97,7 +119,7 @@ const CreativeExplore: React.FC = () => {
     result = sortCreatives(result, sortBy, sortOrder);
 
     return result;
-  }, [creatives, selectedCategory, filters, searchTerm, sortBy, sortOrder]);
+  }, [creatives, selectedCategory, filters, selectedTypes, searchTerm, sortBy, sortOrder]);
 
   const handleCreativeClick = (creative: Creative) => {
     navigate(`/creative/${creative.id}`);
@@ -138,65 +160,22 @@ const CreativeExplore: React.FC = () => {
             <span className="font-medium">创意想法</span>
           </div>
 
-          {/* 游戏专区 */}
-          <div>
-            <div 
-              className="flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-gray-50"
-              onClick={() => setGameExpanded(!gameExpanded)}
-              style={{ pointerEvents: 'auto', position: 'relative', zIndex: 1001 }}
-            >
-              <div className="flex items-center">
-                <span className="text-lg mr-3">🎮</span>
-                <span className="font-medium">游戏专区</span>
-              </div>
-              <svg className={`w-4 h-4 transition-transform ${gameExpanded ? 'rotate-90' : ''}`} fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd"/>
-              </svg>
-            </div>
-            {gameExpanded && (
-              <div className="bg-gray-50">
-                <div className="flex items-center px-8 py-3 cursor-pointer hover:bg-gray-100" onClick={() => handleCategorySelect({ category: 'project', tags: ['game'] })}>
-                  <span className="text-lg mr-3">🎮</span>
-                  <span className="font-medium">游戏项目</span>
-                </div>
-                <div className="flex items-center px-8 py-3 cursor-pointer hover:bg-gray-100" onClick={() => handleCategorySelect({ category: 'prototype', tags: ['game'] })}>
-                  <span className="text-lg mr-3">🔧</span>
-                  <span className="font-medium">游戏原型</span>
-                </div>
-                <div className="flex items-center px-8 py-3 cursor-pointer hover:bg-gray-100" onClick={() => handleCategorySelect({ category: 'resource', tags: ['game'] })}>
-                  <span className="text-lg mr-3">📦</span>
-                  <span className="font-medium">游戏资源</span>
-                </div>
-              </div>
-            )}
+          {/* 原型Demo */}
+          <div 
+            className="flex items-center px-4 py-3 cursor-pointer hover:bg-gray-50"
+            onClick={() => handleCategorySelect({ category: 'prototype' })}
+          >
+            <span className="text-lg mr-3">🔧</span>
+            <span className="font-medium">原型Demo</span>
           </div>
 
-          {/* 应用专区 */}
-          <div>
-            <div 
-              className="flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-gray-50"
-              onClick={() => setAppExpanded(!appExpanded)}
-            >
-              <div className="flex items-center">
-                <span className="text-lg mr-3">📱</span>
-                <span className="font-medium">应用专区</span>
-              </div>
-              <svg className={`w-4 h-4 transition-transform ${appExpanded ? 'rotate-90' : ''}`} fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd"/>
-              </svg>
-            </div>
-            {appExpanded && (
-              <div className="bg-gray-50">
-                <div className="flex items-center px-8 py-3 cursor-pointer hover:bg-gray-100" onClick={() => handleCategorySelect({ category: 'project', tags: ['app'] })}>
-                  <span className="text-lg mr-3">📱</span>
-                  <span className="font-medium">应用项目</span>
-                </div>
-                <div className="flex items-center px-8 py-3 cursor-pointer hover:bg-gray-100" onClick={() => handleCategorySelect({ category: 'prototype', tags: ['app'] })}>
-                  <span className="text-lg mr-3">🔧</span>
-                  <span className="font-medium">应用原型</span>
-                </div>
-              </div>
-            )}
+          {/* 完整项目 */}
+          <div 
+            className="flex items-center px-4 py-3 cursor-pointer hover:bg-gray-50"
+            onClick={() => handleCategorySelect({ category: 'project' })}
+          >
+            <span className="text-lg mr-3">🚀</span>
+            <span className="font-medium">完整项目</span>
           </div>
 
           {/* 创意资源 */}
@@ -222,6 +201,7 @@ const CreativeExplore: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <Navbar />
       <div className="container mx-auto px-4 py-6">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* 左侧导航 */}
@@ -229,6 +209,10 @@ const CreativeExplore: React.FC = () => {
             <div className="space-y-6">
               <div style={{ display: 'none' }}><TestNav /></div>
               {renderNavigationMenu()}
+              <CreativeTypeFilter 
+                onFilterChange={setSelectedTypes}
+                selectedTypes={selectedTypes}
+              />
               <CategoryFilter 
                 onFilterChange={handleFilterChange}
                 selectedFilters={filters}
@@ -239,24 +223,38 @@ const CreativeExplore: React.FC = () => {
           {/* 主内容区 */}
           <div className="lg:col-span-3">
             {/* 搜索和排序栏 */}
-            <div className="bg-white rounded-lg shadow-md p-4 mb-6">
+            <div className="bg-white rounded-lg shadow-md p-4 mb-6 relative z-[3001]">
               <div className="flex flex-col sm:flex-row gap-4 items-center">
                 {/* 搜索框 */}
                 <div className="flex-1 relative">
-                  <input
-                    type="text"
-                    placeholder="搜索创意、标题、描述..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                  <svg className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd"/>
-                  </svg>
+                  <form onSubmit={(e) => { e.preventDefault(); /* 搜索已经通过 useMemo 实时触发 */ }}>
+                    <input
+                      type="text"
+                      placeholder="搜索创意、标题、描述..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent relative z-[3002]"
+                    />
+                    <svg className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd"/>
+                    </svg>
+                    {searchTerm && (
+                      <button
+                        type="button"
+                        onClick={() => setSearchTerm('')}
+                        className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600"
+                      >
+                        <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    )}
+                  </form>
                 </div>
 
                 {/* 排序选择 */}
                 <div className="flex items-center space-x-2">
+                  <label className="text-sm text-gray-600">排序：</label>
                   <select
                     value={`${sortBy}-${sortOrder}`}
                     onChange={(e) => {
@@ -264,13 +262,12 @@ const CreativeExplore: React.FC = () => {
                       setSortBy(field);
                       setSortOrder(order as 'asc' | 'desc');
                     }}
-                    className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white relative z-[3002]"
                   >
                     <option value="created_at-desc">最新发布</option>
                     <option value="created_at-asc">最早发布</option>
-                    <option value="total_expectation-desc">期待值最高</option>
-                    <option value="views-desc">浏览量最高</option>
-                    <option value="title-asc">标题A-Z</option>
+                    <option value="total_expectation-desc">热门程度（按投票数）</option>
+                    <option value="title-asc">标题字母顺序</option>
                   </select>
                 </div>
               </div>

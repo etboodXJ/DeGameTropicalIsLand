@@ -7,6 +7,7 @@ module dgti::creative {
     use sui::tx_context::{Self, TxContext};
     use sui::vec_map::{Self, VecMap};
     use sui::event;
+    use sui::transfer;
     use std::vector;
     use std::option::{Self, Option};
     use sui::clock::{Self, Clock};
@@ -228,6 +229,7 @@ module dgti::creative {
         tags: vector<String>,
         created_at: u64,
         creative_id: ID,
+        creative_type: u8,
     }
 
     // 共享创意对象 - 用于存储所有创意的引用
@@ -749,6 +751,7 @@ module dgti::creative {
             tags: tags,
             created_at: now,
             creative_id:cid,
+            creative_type: creative_type,
         };
         event::emit(event);
     }

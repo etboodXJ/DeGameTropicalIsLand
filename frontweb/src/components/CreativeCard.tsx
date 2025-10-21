@@ -1,5 +1,6 @@
 import React from 'react';
 import { CATEGORY_DISPLAY, TAG_DISPLAY } from '../config/categories';
+import { CREATIVE_TYPES } from '../config/creativeTypes';
 import { Creative } from '../utils/categoryUtils';
 
 interface CreativeCardProps {
@@ -10,8 +11,18 @@ interface CreativeCardProps {
 const CreativeCard: React.FC<CreativeCardProps> = ({ creative, onClick }) => {
   const categoryInfo = CATEGORY_DISPLAY[creative.category as keyof typeof CATEGORY_DISPLAY];
   
+  // 调试信息
+  console.log('CreativeCard data:', {
+    category: creative.category,
+    creative_type: creative.creative_type,
+    categoryInfo,
+    creativeTypeInfo: creative.creative_type !== undefined ? CREATIVE_TYPES[creative.creative_type as keyof typeof CREATIVE_TYPES] : null
+  });
+  
   const formatDate = (timestamp: number) => {
-    return new Date(timestamp * 1000).toLocaleDateString('zh-CN');
+    // 如果时间戳看起来像毫秒（13位数字），直接使用；否则乘以1000
+    const date = timestamp > 1000000000000 ? new Date(timestamp) : new Date(timestamp * 1000);
+    return date.toLocaleString('zh-CN');
   };
 
   const truncateText = (text: string, maxLength: number = 100) => {
@@ -20,7 +31,7 @@ const CreativeCard: React.FC<CreativeCardProps> = ({ creative, onClick }) => {
 
   return (
     <div 
-      className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow cursor-pointer overflow-hidden"
+      className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow cursor-pointer overflow-hidden relative z-[3001]"
       onClick={() => onClick(creative)}
     >
       {/* 头部 */}
@@ -35,18 +46,24 @@ const CreativeCard: React.FC<CreativeCardProps> = ({ creative, onClick }) => {
             </p>
           </div>
           
-          {/* 分类标识 */}
-          <div className="ml-4 flex-shrink-0">
-            <span 
-              className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium"
-              style={{ 
-                backgroundColor: categoryInfo?.color + '20',
-                color: categoryInfo?.color 
-              }}
-            >
-              <span className="mr-1">{categoryInfo?.icon}</span>
-              {categoryInfo?.name}
-            </span>
+          {/* 分类和类型标识 */}
+          <div className="ml-4 flex-shrink-0 space-y-2">
+            {categoryInfo && (
+              <span 
+                className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200"
+              >
+                <span className="mr-1">{categoryInfo.icon}</span>
+                {categoryInfo.name}
+              </span>
+            )}
+            {creative.creative_type !== undefined && CREATIVE_TYPES[creative.creative_type as keyof typeof CREATIVE_TYPES] && (
+              <div>
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-50 text-purple-700 border border-purple-200">
+                  <span className="mr-1">{CREATIVE_TYPES[creative.creative_type as keyof typeof CREATIVE_TYPES].icon}</span>
+                  {CREATIVE_TYPES[creative.creative_type as keyof typeof CREATIVE_TYPES].name}
+                </span>
+              </div>
+            )}
           </div>
         </div>
       </div>

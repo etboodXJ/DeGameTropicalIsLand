@@ -116,7 +116,7 @@ const CreativeSubmitForm: React.FC<CreativeSubmitFormProps> = ({
       return;
     }
     if (!formData.category) {
-      alert('请选择创意分类');
+      alert('请选择项目成熟度');
       return;
     }
 
@@ -168,7 +168,7 @@ const CreativeSubmitForm: React.FC<CreativeSubmitFormProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-start justify-center z-50 p-4 pt-20">
       <div className="glass rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-gray-700/30">
         <div className="sticky top-0 bg-gray-900/80 backdrop-blur-sm p-6 border-b border-gray-700/30">
           <div className="flex justify-between items-center">
@@ -224,7 +224,7 @@ const CreativeSubmitForm: React.FC<CreativeSubmitFormProps> = ({
           {/* 创意分类 */}
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">
-              创意分类 <span className="text-red-400">*</span>
+              项目成熟度 <span className="text-red-400">*</span>
             </label>
             <select 
               value={formData.category}
@@ -232,7 +232,7 @@ const CreativeSubmitForm: React.FC<CreativeSubmitFormProps> = ({
               className="w-full p-3 rounded-lg bg-white/10 border border-gray-700/30 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent text-white"
               required
             >
-              <option value="" className="bg-gray-800">请选择创意分类</option>
+              <option value="" className="bg-gray-800">请选择项目成熟度</option>
               {Object.entries(CATEGORY_DISPLAY).map(([key, config]) => (
                 <option key={key} value={key} className="bg-gray-800">
                   {config.icon} {config.name} - {config.description}

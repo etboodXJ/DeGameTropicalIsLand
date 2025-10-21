@@ -11,6 +11,7 @@ export interface Creative {
   total_expectation: number;
   views: number;
   status?: number;
+  creative_type?: number;
 }
 
 export interface FilterOptions {

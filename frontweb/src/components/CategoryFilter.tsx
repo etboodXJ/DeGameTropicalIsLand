@@ -103,7 +103,7 @@ const CategoryFilter: React.FC<CategoryFilterProps> = ({ onFilterChange, selecte
           <h4 className="text-sm font-medium text-gray-700 mb-2">已选择的条件:</h4>
           <div className="flex flex-wrap gap-2">
             {Object.entries(selectedFilters).map(([filterType, values]) =>
-              values?.map((value) => {
+              values?.map((value: string) => {
                 const config = FILTER_CONFIG[filterType as keyof typeof FILTER_CONFIG];
                 const option = config?.options.find(opt => opt.value === value);
                 

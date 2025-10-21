@@ -1,6 +1,6 @@
 // Module: points
 // 积分系统模块 - 管理用户积分购买、兑换和排行榜
-#[allow(unused_use,duplicate_alias,unused_const)]
+#[allow(unused_use,duplicate_alias,unused_const,deprecated_usage)]
 module dgti::points {
     use std::string::{Self, String};
     use std::vector;

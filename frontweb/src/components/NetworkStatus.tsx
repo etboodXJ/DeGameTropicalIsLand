@@ -2,7 +2,7 @@ import { Box, Text } from '@radix-ui/themes';
 import { useNetworkAwareConfig } from '../hooks/useNetworkAwareConfig';
 
 const NetworkStatus = () => {
-  const { network, isMainnet, config } = useNetworkAwareConfig();
+  const { network, isMainnet } = useNetworkAwareConfig();
 
   return (
     <Box 

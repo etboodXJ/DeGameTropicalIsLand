@@ -1,6 +1,6 @@
 import { ConnectButton } from '@mysten/dapp-kit';
 import { Box, Flex, Text } from '@radix-ui/themes';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import NetworkSelector from './NetworkSelector';
 import WalletBalance from './WalletBalance';
 import PointsBalance from './PointsBalance';
@@ -10,6 +10,13 @@ import { useLanguage } from '../contexts/LanguageContext';
 const Navbar = () => {
   const { t } = useLanguage();
   const navigate = useNavigate();
+  const location = useLocation();
+  
+  const isActive = (path: string) => {
+    if (path === '/' && location.pathname === '/') return true;
+    if (path !== '/' && location.pathname.startsWith(path)) return true;
+    return false;
+  };
   
   return (
     <Box 
@@ -35,19 +42,41 @@ const Navbar = () => {
           </Box>
           <Flex gap="6">
             <Text 
-              className="text-gray-300 font-medium cursor-pointer hover:text-white transition-colors"
+              className={`font-medium cursor-pointer transition-colors ${
+                isActive('/') 
+                  ? 'text-white border-b-2 border-blue-400 pb-1' 
+                  : 'text-gray-300 hover:text-white'
+              }`}
               onClick={() => navigate('/')}
             >
               {t('nav.home')}
             </Text>
             <Text 
-              className="text-gray-400 hover:text-gray-200 cursor-pointer transition-colors"
+              className={`cursor-pointer transition-colors ${
+                isActive('/explore') 
+                  ? 'text-white border-b-2 border-blue-400 pb-1' 
+                  : 'text-gray-400 hover:text-gray-200'
+              }`}
               onClick={() => navigate('/explore')}
             >
               创意分类
             </Text>
             <Text 
-              className="text-gray-400 hover:text-gray-200 cursor-pointer transition-colors"
+              className={`cursor-pointer transition-colors ${
+                isActive('/submit') 
+                  ? 'text-white border-b-2 border-blue-400 pb-1' 
+                  : 'text-gray-400 hover:text-gray-200'
+              }`}
+              onClick={() => navigate('/submit')}
+            >
+              创意提交
+            </Text>
+            <Text 
+              className={`cursor-pointer transition-colors ${
+                isActive('/points') 
+                  ? 'text-white border-b-2 border-blue-400 pb-1' 
+                  : 'text-gray-400 hover:text-gray-200'
+              }`}
               onClick={() => navigate('/points')}
             >
               {t('nav.points')}

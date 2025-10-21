@@ -175,7 +175,7 @@ module dgti::user {
 module dgti::trade {
     use dgti::asset::Asset;
     use std::string::String;
-    use sui::object::{Self, UID};
+    use sui::object::{Self, UID, ID};
     use sui::tx_context::TxContext;
 
     // 交易报价表示

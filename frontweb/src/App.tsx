@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import HomePage from "./pages/HomePage";
 import CreativeDetailPage from "./pages/CreativeDetailPage";
 import CreativeExplore from "./pages/CreativeExplore";
+import CreativeSubmitPage from "./pages/CreativeSubmitPage";
 import TestExplore from "./pages/TestExplore";
 import PointsPage from "./pages/PointsPage";
 import MyPointsPage from "./pages/MyPointsPage";
@@ -19,6 +20,7 @@ function App() {
             <Route path="/" element={<HomePage />} />
             <Route path="/creative/:id" element={<CreativeDetailPage />} />
             <Route path="/explore" element={<CreativeExplore />} />
+            <Route path="/submit" element={<CreativeSubmitPage />} />
             <Route path="/test" element={<TestExplore />} />
             <Route path="/points" element={<PointsPage />} />
             <Route path="/my-points" element={<MyPointsPage />} />

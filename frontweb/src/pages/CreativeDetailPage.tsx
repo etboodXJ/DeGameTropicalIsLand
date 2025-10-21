@@ -5,6 +5,7 @@ import { useSuiClient, useCurrentAccount, useSignAndExecuteTransaction } from '@
 import { Transaction } from '@mysten/sui/transactions';
 import { useNetworkAwareConfig } from '../hooks/useNetworkAwareConfig';
 import { CATEGORY_DISPLAY, TAG_DISPLAY } from '../config/categories';
+import Navbar from '../components/Navbar';
 
 const CreativeDetailPage = () => {
   const navigate = useNavigate();
@@ -73,47 +74,8 @@ const CreativeDetailPage = () => {
     navigate('/');
   };
 
-  const handleDelete = async () => {
-    if (!currentAccount) {
-      alert('请先连接钱包');
-      return;
-    }
-
-    if (!creative) {
-      return;
-    }
-
-    // 检查是否为创作者
-    if (currentAccount.address !== creative.creator) {
-      alert('您不是创作者，无法删除本创意');
-      return;
-    }
-
-    if (!confirm('确定要删除这个创意吗？此操作不可恢复。')) {
-      return;
-    }
-
-    try {
-      const tx = new Transaction();
-      
-      // 调用标记删除函数
-      tx.moveCall({
-        target: `${packageId}::creative::mark_creative_as_deleted`,
-        arguments: [
-          tx.object(creative.id),
-          tx.object('0x6')
-        ],
-      });
-
-      await signAndExecute({ transaction: tx });
-      
-      alert('创意已标记为删除，不会在列表中显示');
-      navigate('/');
-      
-    } catch (error) {
-      console.error('删除创意失败:', error);
-      alert(`删除失败: ${error instanceof Error ? error.message : '请重试'}`);
-    }
+  const handleDelete = () => {
+    alert('创意删除功能暂时不可用，请联系管理员处理。');
   };
 
   // 检查是否为创作者
@@ -148,6 +110,8 @@ const CreativeDetailPage = () => {
 
   return (
     <Box className="min-h-screen">
+      <Navbar />
+      
       {/* 返回按钮 */}
       <div className="p-6 relative z-50">
         <button 
@@ -195,7 +159,7 @@ const CreativeDetailPage = () => {
               <Heading as="h3" size="4" className="text-gray-100 mb-4">标签</Heading>
               <Flex wrap="wrap" gap="2" className="mb-6">
                 {creative.tags && creative.tags.length > 0 ? (
-                  creative.tags.map((tag, index) => (
+                  creative.tags.map((tag: string, index: number) => (
                     <Badge key={index} variant="surface" className="bg-blue-500/20 text-blue-400">
                       {TAG_DISPLAY[tag]?.name || tag}
                     </Badge>
@@ -220,7 +184,21 @@ const CreativeDetailPage = () => {
                 </div>
                 <div>
                   <Text size="2" className="font-medium">创作者</Text>
-                  <Text size="1">{creative.creator.slice(0, 6)}...{creative.creator.slice(-4)}</Text>
+                  <div className="flex items-center gap-2">
+                    <Text size="1" className="font-mono break-all">{creative.creator}</Text>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(creative.creator);
+                        alert('创作者地址已复制到剪贴板');
+                      }}
+                      className="text-blue-500 hover:text-blue-700 transition-colors"
+                      title="复制地址"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                      </svg>
+                    </button>
+                  </div>
                 </div>
                 <div>
                   <Text size="2" className="font-medium">发布时间</Text>
@@ -228,7 +206,21 @@ const CreativeDetailPage = () => {
                 </div>
                 <div>
                   <Text size="2" className="font-medium">创意ID</Text>
-                  <Text size="1">{creative.id.slice(0, 8)}...</Text>
+                  <div className="flex items-center gap-2">
+                    <Text size="1" className="font-mono break-all">{creative.id}</Text>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(creative.id);
+                        alert('创意ID已复制到剪贴板');
+                      }}
+                      className="text-blue-500 hover:text-blue-700 transition-colors"
+                      title="复制ID"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                      </svg>
+                    </button>
+                  </div>
                 </div>
               </div>
             </Box>
@@ -242,10 +234,105 @@ const CreativeDetailPage = () => {
                 <Button className="bg-purple-500 hover:bg-purple-600 text-white">
                   💬 收藏作品
                 </Button>
-                <Button className="bg-green-500 hover:bg-green-600 text-white">
+                <Button 
+                  className="bg-green-500 hover:bg-green-600 text-white"
+                  onClick={() => {
+                    const shareUrl = window.location.href;
+                    const shareTitle = `发现一个精彩创意：${creative.title}`;
+                    const shareText = `${creative.description.slice(0, 100)}${creative.description.length > 100 ? '...' : ''}`;
+                    
+                    // 创建分享菜单
+                    const shareMenu = document.createElement('div');
+                    shareMenu.className = 'fixed inset-0 bg-black/50 flex items-center justify-center z-[9999]';
+                    shareMenu.innerHTML = `
+                      <div class="bg-white rounded-lg p-6 max-w-sm w-full mx-4">
+                        <h3 class="text-lg font-semibold mb-4 text-gray-800">分享到</h3>
+                        <div class="grid grid-cols-2 gap-3">
+                          <button onclick="shareToWeChat()" class="flex items-center justify-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                            <span class="text-green-600 mr-2">📱</span>
+                            <span class="text-gray-700">微信</span>
+                          </button>
+                          <button onclick="shareToWeibo()" class="flex items-center justify-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                            <span class="text-red-500 mr-2">📰</span>
+                            <span class="text-gray-700">微博</span>
+                          </button>
+                          <button onclick="shareToTwitter()" class="flex items-center justify-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                            <span class="text-blue-500 mr-2">🐦</span>
+                            <span class="text-gray-700">Twitter</span>
+                          </button>
+                          <button onclick="shareToDiscord()" class="flex items-center justify-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                            <span class="text-indigo-500 mr-2">🎮</span>
+                            <span class="text-gray-700">Discord</span>
+                          </button>
+                          <button onclick="copyLink()" class="flex items-center justify-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                            <span class="text-gray-500 mr-2">🔗</span>
+                            <span class="text-gray-700">复制链接</span>
+                          </button>
+                          <button onclick="closeShareMenu()" class="flex items-center justify-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                            <span class="text-gray-500 mr-2">❌</span>
+                            <span class="text-gray-700">取消</span>
+                          </button>
+                        </div>
+                      </div>
+                    `;
+                    
+                    // 添加分享函数
+                    (window as any).shareToWeChat = () => {
+                      // 微信分享：复制链接到剪贴板
+                      navigator.clipboard.writeText(shareUrl).then(() => {
+                        alert('链接已复制到剪贴板！\n\n请打开微信，在聊天中粘贴分享。');
+                      }).catch(() => {
+                        alert('请手动复制链接分享到微信：\n' + shareUrl);
+                      });
+                      (window as any).closeShareMenu();
+                    };
+                    
+                    (window as any).shareToWeibo = () => {
+                      const weiboUrl = `https://service.weibo.com/share/share.php?url=${encodeURIComponent(shareUrl)}&title=${encodeURIComponent(shareTitle + ' ' + shareText)}`;
+                      window.open(weiboUrl, '_blank');
+                      (window as any).closeShareMenu();
+                    };
+                    
+                    (window as any).shareToTwitter = () => {
+                      const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareTitle + ' ' + shareText)}&url=${encodeURIComponent(shareUrl)}`;
+                      window.open(twitterUrl, '_blank');
+                      (window as any).closeShareMenu();
+                    };
+                    
+                    (window as any).shareToDiscord = () => {
+                      // Discord 不支持直接分享，复制链接
+                      navigator.clipboard.writeText(`${shareTitle}\n${shareText}\n${shareUrl}`);
+                      alert('Discord 分享内容已复制到剪贴板，请粘贴到 Discord 频道中！');
+                      (window as any).closeShareMenu();
+                    };
+                    
+                    (window as any).copyLink = () => {
+                      navigator.clipboard.writeText(shareUrl);
+                      alert('链接已复制到剪贴板！');
+                      (window as any).closeShareMenu();
+                    };
+                    
+                    (window as any).closeShareMenu = () => {
+                      document.body.removeChild(shareMenu);
+                      delete (window as any).shareToWeChat;
+                      delete (window as any).shareToWeibo;
+                      delete (window as any).shareToTwitter;
+                      delete (window as any).shareToDiscord;
+                      delete (window as any).copyLink;
+                      delete (window as any).closeShareMenu;
+                    };
+                    
+                    document.body.appendChild(shareMenu);
+                  }}
+                >
                   🔄 分享作品
                 </Button>
-                <Button className="bg-gray-700 hover:bg-gray-600 text-white">
+                <Button 
+                  className="bg-gray-700 hover:bg-gray-600 text-white"
+                  onClick={() => {
+                    alert(`联系作者功能即将推出！\n\n作者地址：${creative.creator}\n\n您可以：\n1. 复制作者地址进行链上交互\n2. 等待站内消息系统上线\n3. 在创意评论区留言`);
+                  }}
+                >
                   📧 联系作者
                 </Button>
                 {isCreator && (
