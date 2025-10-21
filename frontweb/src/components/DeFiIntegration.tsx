@@ -4,6 +4,7 @@ import { useCurrentAccount, useSignAndExecuteTransaction } from '@mysten/dapp-ki
 import { Transaction } from '@mysten/sui/transactions';
 import { usePoints } from '../hooks/usePoints';
 import { BucketService } from '../services/bucketService';
+import { CetusService } from '../services/cetusService';
 import { useSuiClient } from '@mysten/dapp-kit';
 
 interface DeFiIntegrationProps {
@@ -15,6 +16,7 @@ const DeFiIntegration: React.FC<DeFiIntegrationProps> = ({ platform, onBack }) =
   const [amount, setAmount] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [bucketService, setBucketService] = useState<BucketService | null>(null);
+  const [cetusService, setCetusService] = useState<CetusService | null>(null);
   const [userBalance, setUserBalance] = useState<any>(null);
   const [balanceLoading, setBalanceLoading] = useState(false);
   const currentAccount = useCurrentAccount();
@@ -36,6 +38,20 @@ const DeFiIntegration: React.FC<DeFiIntegrationProps> = ({ platform, onBack }) =
     }
   }, [platform, currentAccount, suiClient]);
 
+  // 初始化 CetusService
+  useEffect(() => {
+    if (platform === 'cetus' && suiClient) {
+      const service = new CetusService();
+      service.initialize(suiClient);
+      setCetusService(service);
+      
+      // 获取用户流动性位置
+      if (currentAccount?.address) {
+        fetchUserLiquidityPositions(service, currentAccount.address);
+      }
+    }
+  }, [platform, currentAccount, suiClient]);
+
   // 获取用户余额
   const fetchUserBalance = async (service: BucketService, userAddress: string) => {
     setBalanceLoading(true);
@@ -44,6 +60,22 @@ const DeFiIntegration: React.FC<DeFiIntegrationProps> = ({ platform, onBack }) =
       setUserBalance(balance);
     } catch (error) {
       console.error('获取余额失败:', error);
+    } finally {
+      setBalanceLoading(false);
+    }
+  };
+
+  // 获取用户流动性位置
+  const fetchUserLiquidityPositions = async (service: CetusService, userAddress: string) => {
+    setBalanceLoading(true);
+    try {
+      const positions = await service.getUserPositions(userAddress);
+      setUserBalance({
+        positions: positions,
+        totalValue: positions.reduce((sum, pos) => sum + (typeof pos.liquidity === 'number' ? pos.liquidity : 0), 0)
+      });
+    } catch (error) {
+      console.error('获取流动性位置失败:', error);
     } finally {
       setBalanceLoading(false);
     }
@@ -115,6 +147,44 @@ const DeFiIntegration: React.FC<DeFiIntegrationProps> = ({ platform, onBack }) =
             }
           }
         );
+      } else if (platform === 'cetus' && cetusService) {
+        // 使用 CetusService 进行真实添加流动性
+        const tx = await cetusService.buildAddLiquidityTransaction({
+          tokenA: 'SUI',
+          tokenB: 'USDC',
+          amountA: parseFloat(amount),
+          amountB: parseFloat(amount) * 0.5, // 假设汇率
+          lowerTick: -1000,
+          upperTick: 1000,
+          user: currentAccount.address
+        });
+
+        // 执行交易
+        signAndExecute(
+          { transaction: tx },
+          {
+            onSuccess: (result) => {
+              console.log('Cetus添加流动性交易成功:', result);
+              
+              // 计算积分：添加流动性获得更多积分奖励 (1.5倍)
+              const earnedPoints = Math.floor(parseFloat(amount) * 150);
+              
+              // 添加积分记录
+              addPoints(platform, parseFloat(amount), result.digest);
+              
+              // 刷新流动性位置
+              fetchUserLiquidityPositions(cetusService, currentAccount.address);
+              
+              setAmount('');
+              alert(`成功添加流动性 ${amount} SUI，获得 ${earnedPoints} CYKJ积分！`);
+            },
+            onError: (error) => {
+              console.error('Cetus添加流动性交易失败:', error);
+              const errorMessage = cetusService.handleTransactionError(error);
+              alert(`添加流动性失败: ${errorMessage}`);
+            }
+          }
+        );
       } else {
         // 其他平台的模拟逻辑
         const tx = new Transaction();
@@ -176,19 +246,32 @@ const DeFiIntegration: React.FC<DeFiIntegrationProps> = ({ platform, onBack }) =
       // 模拟网络延迟
       await new Promise(resolve => setTimeout(resolve, 2000));
       
-      // 计算积分：每存入1 SUI获得100 CYKJ积分
-      const earnedPoints = Math.floor(parseFloat(amount) * 100);
+      // 根据平台计算不同的积分奖励
+      let earnedPoints: number;
+      let actionText: string;
+      
+      if (platform === 'cetus') {
+        // Cetus 添加流动性获得更多积分奖励 (1.5倍)
+        earnedPoints = Math.floor(parseFloat(amount) * 150);
+        actionText = `添加流动性 ${amount} SUI`;
+      } else {
+        // 其他平台每存入1 SUI获得100 CYKJ积分
+        earnedPoints = Math.floor(parseFloat(amount) * 100);
+        actionText = `存入 ${amount} SUI`;
+      }
       
       // 添加积分记录
       addPoints(platform, parseFloat(amount));
       
-      //如果是Bucket平台，也刷新余额
+      // 刷新对应平台的数据
       if (platform === 'bucket' && bucketService) {
         fetchUserBalance(bucketService, currentAccount?.address || '');
+      } else if (platform === 'cetus' && cetusService) {
+        fetchUserLiquidityPositions(cetusService, currentAccount?.address || '');
       }
       
       setAmount('');
-      alert(`模拟存入 ${amount} SUI 成功，获得 ${earnedPoints} CYKJ积分！`);
+      alert(`模拟${actionText}成功，获得 ${earnedPoints} CYKJ积分！`);
     } catch (error) {
       console.error('模拟存款失败:', error);
       alert('操作失败，请重试');
@@ -224,7 +307,7 @@ const DeFiIntegration: React.FC<DeFiIntegrationProps> = ({ platform, onBack }) =
           </Text>
         </Box>
 
-        {/* 显示用户余额 (仅Bucket平台) */}
+        {/* 显示用户余额 (Bucket平台) */}
         {platform === 'bucket' && userBalance && (
           <Box className="mb-6 p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg">
             <Text size="2" className="text-blue-600 block mb-2 font-medium">
@@ -250,21 +333,56 @@ const DeFiIntegration: React.FC<DeFiIntegrationProps> = ({ platform, onBack }) =
           </Box>
         )}
 
-        {platform === 'bucket' && balanceLoading && (
+        {/* 显示用户流动性位置 (Cetus平台) */}
+        {platform === 'cetus' && userBalance && userBalance.positions && (
+          <Box className="mb-6 p-4 bg-purple-500/10 border border-purple-500/30 rounded-lg">
+            <Text size="2" className="text-purple-600 block mb-2 font-medium">
+              💧 您的流动性位置
+            </Text>
+            <Flex direction="column" gap="1">
+              {userBalance.positions.length > 0 ? (
+                userBalance.positions.map((pos: any, index: number) => (
+                  <Box key={index} className="mb-2 p-2 bg-purple-500/5 rounded">
+                    <Text size="2" className="text-purple-700">
+                      池子: {pos.tokenA}/{pos.tokenB}
+                    </Text>
+                    <Text size="2" className="text-purple-700">
+                      流动性: {typeof pos.liquidity === 'number' ? pos.liquidity.toFixed(4) : '0.0000'}
+                    </Text>
+                    <Text size="2" className="text-purple-700">
+                      价格范围: {pos.lowerTick} - {pos.upperTick}
+                    </Text>
+                  </Box>
+                ))
+              ) : (
+                <Text size="2" className="text-purple-600">
+                  暂无流动性位置
+                </Text>
+              )}
+              <Text size="2" className="text-purple-800 font-medium mt-2">
+                总价值: ${userBalance.totalValue ? userBalance.totalValue.toFixed(2) : '0.00'}
+              </Text>
+            </Flex>
+          </Box>
+        )}
+
+        {(platform === 'bucket' || platform === 'cetus') && balanceLoading && (
           <Box className="mb-6 p-4 bg-gray-500/10 border border-gray-500/30 rounded-lg">
             <Text size="2" className="text-gray-600">
-              正在加载余额...
+              {platform === 'bucket' ? '正在加载余额...' : '正在加载流动性位置...'}
             </Text>
           </Box>
         )}
 
         <Box className="mb-6">
-          <Text className="text-gray-800 mb-2 block">存款金额 (SUI)</Text>
+          <Text className="text-gray-800 mb-2 block">
+            {platform === 'cetus' ? '添加流动性金额 (SUI)' : '存款金额 (SUI)'}
+          </Text>
           <input
             type="number"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
-            placeholder="输入存款金额"
+            placeholder={platform === 'cetus' ? '输入添加流动性的SUI数量' : '输入存款金额'}
             step="0.1"
             min="0"
             className="w-full p-3 rounded-lg border border-gray-300 bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-400 relative"
@@ -277,14 +395,20 @@ const DeFiIntegration: React.FC<DeFiIntegrationProps> = ({ platform, onBack }) =
             💡 积分奖励规则
           </Text>
           <Text size="2" className="text-yellow-700">
-            • 每存入 1 SUI = 100 CYKJ 积分
+            {platform === 'cetus' 
+              ? '• 每添加 1 SUI 流动性 = 150 CYKJ 积分 (1.5倍奖励)'
+              : '• 每存入 1 SUI = 100 CYKJ 积分'
+            }
           </Text>
           <Text size="2" className="text-yellow-700">
             • 积分可用于投票创意项目
           </Text>
           {amount && (
             <Text size="2" className="text-yellow-800 mt-2 font-medium">
-              预计获得: {Math.floor(parseFloat(amount || '0') * 100)} CYKJ
+              预计获得: {platform === 'cetus' 
+                ? Math.floor(parseFloat(amount || '0') * 150)
+                : Math.floor(parseFloat(amount || '0') * 100)
+              } CYKJ
             </Text>
           )}
         </Box>
@@ -296,7 +420,7 @@ const DeFiIntegration: React.FC<DeFiIntegrationProps> = ({ platform, onBack }) =
             className={`w-full bg-gradient-to-r from-${config.color}-500 to-${config.color}-600 text-white rounded-lg py-3 disabled:opacity-50 relative`}
             style={{ position: 'relative', zIndex: 9999, pointerEvents: 'auto' }}
           >
-            {isLoading ? '处理中...' : '模拟存款 (演示)'}
+            {isLoading ? '处理中...' : (platform === 'cetus' ? '模拟添加流动性 (演示)' : '模拟存款 (演示)')}
           </Button>
           
           <Button
@@ -306,7 +430,9 @@ const DeFiIntegration: React.FC<DeFiIntegrationProps> = ({ platform, onBack }) =
             className="w-full border-gray-400 text-gray-700 hover:bg-gray-100 relative"
             style={{ position: 'relative', zIndex: 9999, pointerEvents: 'auto' }}
           >
-            {platform === 'bucket' ? 'Bucket 存款' : '真实存款 (需要SDK)'}
+            {platform === 'bucket' ? 'Bucket 存款' : 
+             platform === 'cetus' ? 'Cetus 添加流动性' : 
+             '真实存款 (需要SDK)'}
           </Button>
         </Flex>
 
@@ -314,6 +440,8 @@ const DeFiIntegration: React.FC<DeFiIntegrationProps> = ({ platform, onBack }) =
           <Text size="1" className="text-blue-700">
             {platform === 'bucket' 
               ? 'ℹ️ Bucket Protocol 已集成SDK，支持真实存款交易'
+              : platform === 'cetus'
+              ? 'ℹ️ Cetus Protocol 已集成SDK，支持真实添加流动性交易'
               : 'ℹ️ 真实存款功能需要集成对应平台的SDK，目前提供模拟演示'
             }
           </Text>
