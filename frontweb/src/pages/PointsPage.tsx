@@ -20,21 +20,21 @@ const PointsPage = () => {
       name: 'Bucket Protocol',
       description: '去中心化借贷协议',
       color: 'from-blue-500 to-blue-600',
-      icon: '🪣'
+      icon: 'BUCKET'
     },
     {
       id: 'cetus' as Platform,
       name: 'Cetus Protocol',
       description: 'DEX流动性协议',
       color: 'from-purple-500 to-purple-600',
-      icon: '🐋'
+      icon: 'CETUS'
     },
     {
       id: 'navi' as Platform,
       name: 'Navi Protocol',
       description: '一站式DeFi协议',
       color: 'from-green-500 to-green-600',
-      icon: '🧭'
+      icon: 'NAVI'
     }
   ];
 
@@ -68,11 +68,11 @@ const PointsPage = () => {
             {/* 积分总览 */}
             <Box className="mb-8">
               <Box className="glass rounded-2xl p-8 text-center">
-                <Heading as="h1" size="6" className="text-white mb-4">我的积分</Heading>
-                <Text size="8" className="text-yellow-400 font-bold mb-2">
+                <Heading as="h1" size="6" className="text-gray-800 mb-4">我的积分</Heading>
+                <Text size="8" className="text-yellow-600 font-bold mb-2">
                   {points.toLocaleString()} CYKJ
                 </Text>
-                <Text size="3" className="text-gray-400 mb-4">
+                <Text size="3" className="text-gray-600 mb-4">
                   通过DeFi操作获得积分奖励
                 </Text>
                 <Button
@@ -87,27 +87,42 @@ const PointsPage = () => {
 
             {/* 平台选择 */}
             <Box className="mb-8">
-              <Heading as="h2" size="4" className="text-white mb-6">选择DeFi平台</Heading>
+              <Heading as="h2" size="4" className="text-gray-800 mb-6">选择DeFi平台</Heading>
               <Flex className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {platforms.map((platform) => (
                   <Box
                     key={platform.id}
-                    className="glass rounded-xl p-6 cursor-pointer hover:scale-105 transition-all duration-300"
+                    className="glass rounded-xl p-6 hover:scale-105 transition-all duration-300 relative"
                     onClick={() => handlePlatformSelect(platform.id)}
+                    style={{ 
+                      position: 'relative', 
+                      zIndex: 3000,
+                      pointerEvents: 'auto'
+                    }}
                   >
                     <Box className="text-center">
-                      <Text size="6" className="mb-4 block">{platform.icon}</Text>
-                      <Heading as="h3" size="3" className="text-white mb-2">
+                      <Text size="8" className="mb-4 block font-bold text-gray-800">{platform.icon}</Text>
+                      <Heading as="h3" size="3" className="text-gray-800 mb-2">
                         {platform.name}
                       </Heading>
-                      <Text size="2" className="text-gray-400 mb-4">
+                      <Text size="2" className="text-gray-600 mb-4">
                         {platform.description}
                       </Text>
-                      <Button
-                        className={`w-full bg-gradient-to-r ${platform.color} text-white rounded-lg hover:opacity-90 transition-opacity`}
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handlePlatformSelect(platform.id);
+                        }}
+                        className={`w-full px-4 py-3 bg-gradient-to-r ${platform.color} text-white rounded-lg hover:opacity-90 transition-all duration-300 font-medium cursor-pointer`}
+                        style={{ 
+                          position: 'relative', 
+                          zIndex: 3001,
+                          pointerEvents: 'auto',
+                          cursor: 'pointer'
+                        }}
                       >
                         进入存款
-                      </Button>
+                      </button>
                     </Box>
                   </Box>
                 ))}
@@ -117,7 +132,7 @@ const PointsPage = () => {
             {/* 最近积分记录 */}
             <Box>
               <Flex justify="between" align="center" className="mb-6">
-                <Heading as="h2" size="4" className="text-white">最近记录</Heading>
+                <Heading as="h2" size="4" className="text-gray-800">最近记录</Heading>
                 <Button
                   onClick={() => navigate('/my-points')}
                   variant="ghost"
@@ -128,7 +143,7 @@ const PointsPage = () => {
               </Flex>
               <Box className="glass rounded-xl p-6">
                 {records.length === 0 ? (
-                  <Text className="text-gray-400 text-center py-8">
+                  <Text className="text-gray-600 text-center py-8">
                     暂无积分记录，开始您的第一笔DeFi操作吧！
                   </Text>
                 ) : (
@@ -141,23 +156,23 @@ const PointsPage = () => {
                         className="p-4 bg-white/5 rounded-lg"
                       >
                         <Flex align="center" gap="3">
-                          <Text size="4">
+                          <Text size="4" className="font-bold text-gray-800">
                             {platforms.find(p => p.id === record.platform)?.icon}
                           </Text>
                           <Box>
-                            <Text className="text-white font-medium">
+                            <Text className="text-gray-800 font-medium">
                               {platforms.find(p => p.id === record.platform)?.name}
                             </Text>
-                            <Text size="2" className="text-gray-400">
+                            <Text size="2" className="text-gray-600">
                               存入 {record.amount} SUI
                             </Text>
                           </Box>
                         </Flex>
                         <Box className="text-right">
-                          <Text className="text-yellow-400 font-medium">
+                          <Text className="text-yellow-600 font-medium">
                             +{record.points} CYKJ
                           </Text>
-                          <Text size="2" className="text-gray-400">
+                          <Text size="2" className="text-gray-600">
                             {new Date(record.timestamp).toLocaleDateString()}
                           </Text>
                         </Box>
@@ -165,7 +180,7 @@ const PointsPage = () => {
                     ))}
                     {records.length > 3 && (
                       <Box className="text-center pt-4">
-                        <Text size="2" className="text-gray-400">
+                        <Text size="2" className="text-gray-600">
                           还有 {records.length - 3} 条记录...
                         </Text>
                       </Box>
