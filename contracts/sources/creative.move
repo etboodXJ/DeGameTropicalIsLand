@@ -1,6 +1,6 @@
 // 模块: creative
 // 创意管理系统模块 - 管理创意提交、实例和期待值
-#[allow(unused_use,duplicate_alias)]
+#[allow(unused_use,duplicate_alias,unused_mut_parameter)]
 module dgti::creative {
     use std::string::{Self, utf8, String};
     use sui::object::{Self, UID, ID};
@@ -9,6 +9,7 @@ module dgti::creative {
     use sui::event;
     use std::vector;
     use std::option::{Self, Option};
+    use sui::clock::{Self, Clock};
     use dgti::points::{Self, PointsBalance};
 
     // 创意状态常量
@@ -17,6 +18,7 @@ module dgti::creative {
     const STATUS_REVIEWING: u8 = 2;  // 审核中
     const STATUS_PUBLISHED: u8 = 3;  // 已发布
     const STATUS_REJECTED: u8 = 4;  // 已拒绝
+    const STATUS_DELETED: u8 = 5;   // 已删除
     
     // 主分类常量
     const CATEGORY_IDEA: vector<u8> = b"idea";
@@ -223,6 +225,7 @@ module dgti::creative {
         title: String,
         description: String,
         category: String,
+        tags: vector<String>,
         created_at: u64,
         creative_id: ID,
     }
@@ -666,10 +669,11 @@ module dgti::creative {
         creative_type: u8,
         category: String,
         tags: vector<String>,
+        clock: &Clock,
         ctx: &mut TxContext,
     ) {
         let sender = tx_context::sender(ctx);
-        let now = tx_context::epoch(ctx);
+        let now = clock::timestamp_ms(clock);
         
         let id = object::new(ctx);
         let cid = object::uid_to_inner(&id);
@@ -742,10 +746,34 @@ module dgti::creative {
             title: title,
             description: description,
             category: category,
+            tags: tags,
             created_at: now,
             creative_id:cid,
         };
         event::emit(event);
+    }
+
+    // 标记删除共享创意
+    #[allow(lint(public_entry))]
+    entry fun mark_creative_as_deleted(
+        creative: &mut Creative,
+        clock: &Clock,
+        ctx: &mut TxContext
+    ) {
+        // 验证创作者
+        assert!(creative.creator == tx_context::sender(ctx), 1);
+        
+        // 验证状态 (只有已发布的创意可以标记删除)
+        assert!(creative.status == STATUS_PUBLISHED, 2);
+        
+        // 标记为已删除
+        creative.status = STATUS_DELETED;
+        creative.updated_at = clock::timestamp_ms(clock);
+    }
+
+    // 检查创意是否已删除
+    public fun is_deleted(creative: &Creative): bool {
+        creative.status == STATUS_DELETED
     }
 
     // 获取共享对象中的创意数量

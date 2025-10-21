@@ -5,6 +5,9 @@ import SimpleNavigation from '../components/SimpleNavigation';
 import TestNav from '../components/TestNav';
 import { filterCreatives, filterByCategory, searchCreatives, sortCreatives, Creative, FilterOptions } from '../utils/categoryUtils';
 import { NAVIGATION_MENU } from '../config/categories';
+import { useSuiClient } from '@mysten/dapp-kit';
+import { useNetworkAwareConfig } from '../hooks/useNetworkAwareConfig';
+import { useNavigate } from 'react-router-dom';
 
 interface CategorySelection {
   category?: string;
@@ -19,56 +22,61 @@ const CreativeExplore: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('created_at');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  
+  const suiClient = useSuiClient();
+  const navigate = useNavigate();
+  const { packageId, isContractDeployed } = useNetworkAwareConfig();
 
   // 模拟数据加载
   useEffect(() => {
     const loadCreatives = async () => {
       setLoading(true);
       // 模拟API调用
-      const mockData: Creative[] = [
-        {
-          id: '1',
-          title: '2D横版动作游戏原型',
-          description: '使用Unity开发的2D横版动作游戏，包含角色移动、跳跃、攻击等基础功能',
-          category: 'prototype',
-          tags: ['game', 'unity', '2d', 'concept'],
-          creator: '0x1234567890abcdef',
-          created_at: 1640995200,
-          total_expectation: 150,
-          views: 89
-        },
-        {
-          id: '2',
-          title: 'AI生成的游戏角色动画',
-          description: 'AI生成的游戏角色行走、跑步、攻击动画序列，可用于2D游戏开发',
-          category: 'resource',
-          tags: ['game', 'character', 'animation', 'ai'],
-          creator: '0xabcdef1234567890',
-          created_at: 1640908800,
-          total_expectation: 200,
-          views: 156
-        },
-        {
-          id: '3',
-          title: 'DeFi收益聚合器项目',
-          description: '基于区块链的DeFi收益聚合器，帮助用户自动寻找最优收益策略',
-          category: 'project',
-          tags: ['creative', 'blockchain', 'development'],
-          creator: '0x567890abcdef1234',
-          created_at: 1640822400,
-          total_expectation: 500,
-          views: 234
-        }
-      ];
-      
-      setTimeout(() => {
-        setCreatives(mockData);
+      if (!isContractDeployed || !packageId) {
         setLoading(false);
-      }, 1000);
+        return;
+      }
+
+      try {
+        const events = await suiClient.queryEvents({
+          query: {
+            MoveEventType: `${packageId}::creative::CreativeSubmitted`
+          },
+          limit: 50,
+          order: 'descending'
+        });
+
+        const creativesData: Creative[] = [];
+        
+        for (const event of events.data) {
+          if (event.parsedJson) {
+            const data = event.parsedJson as any;
+            
+            creativesData.push({
+              id: data.creative_id,
+              title: data.title,
+              description: data.description,
+              category: data.category,
+              tags: data.tags || [],
+              creator: data.creator,
+              created_at: parseInt(data.created_at),
+              total_expectation: 0,
+              views: 0
+            });
+          }
+        }
+        
+        setCreatives(creativesData);
+      } catch (error) {
+        console.error('加载创意失败:', error);
+        setCreatives([]);
+      } finally {
+        setLoading(false);
+      }
     };
 
     loadCreatives();
-  }, []);
+  }, [packageId, isContractDeployed]);
 
   // 筛选和搜索逻辑
   const filteredCreatives = useMemo(() => {
@@ -92,8 +100,7 @@ const CreativeExplore: React.FC = () => {
   }, [creatives, selectedCategory, filters, searchTerm, sortBy, sortOrder]);
 
   const handleCreativeClick = (creative: Creative) => {
-    console.log('点击创意:', creative);
-    // 这里应该导航到创意详情页
+    navigate(`/creative/${creative.id}`);
   };
 
   const handleCategorySelect = (category: CategorySelection | null) => {
@@ -125,7 +132,7 @@ const CreativeExplore: React.FC = () => {
           {/* 创意想法 */}
           <div 
             className="flex items-center px-4 py-3 cursor-pointer hover:bg-gray-50"
-            onClick={() => handleCategorySelect({ category: 'idea', tags: ['creative'] })}
+            onClick={() => handleCategorySelect({ category: 'idea' })}
           >
             <span className="text-lg mr-3">💡</span>
             <span className="font-medium">创意想法</span>
@@ -195,7 +202,7 @@ const CreativeExplore: React.FC = () => {
           {/* 创意资源 */}
           <div 
             className="flex items-center px-4 py-3 cursor-pointer hover:bg-gray-50"
-            onClick={() => handleCategorySelect({ category: 'resource', tags: ['creative'] })}
+            onClick={() => handleCategorySelect({ category: 'resource' })}
           >
             <span className="text-lg mr-3">📦</span>
             <span className="font-medium">创意资源</span>

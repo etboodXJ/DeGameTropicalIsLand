@@ -134,6 +134,7 @@ const CreativeSubmitForm: React.FC<CreativeSubmitFormProps> = ({
           tx.pure.u8(formData.creativeType),
           tx.pure.string(formData.category),
           tx.pure.vector('string', formData.tags),
+          tx.object('0x6'),
         ],
       });
 

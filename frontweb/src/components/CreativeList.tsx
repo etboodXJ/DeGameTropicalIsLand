@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSuiClient } from '@mysten/dapp-kit';
+import { useNavigate } from 'react-router-dom';
 import { useNetworkAwareConfig } from '../hooks/useNetworkAwareConfig';
 import { CATEGORY_DISPLAY, TAG_DISPLAY } from '../config/categories';
 import { Box, Flex, Heading, Text } from '@radix-ui/themes';
@@ -30,6 +31,7 @@ const CreativeList: React.FC<CreativeListProps> = ({
   const [error, setError] = useState<string | null>(null);
 
   const suiClient = useSuiClient();
+  const navigate = useNavigate();
   const { packageId, isContractDeployed } = useNetworkAwareConfig();
 
   // 获取创意列表
@@ -64,7 +66,7 @@ const CreativeList: React.FC<CreativeListProps> = ({
             title: data.title,
             description: data.description,
             category: data.category,
-            tags: [],
+            tags: data.tags || [],
             createdAt: parseInt(data.created_at),
             status: 1, // 已提交状态
             totalExpectation: 0
@@ -158,38 +160,48 @@ const CreativeList: React.FC<CreativeListProps> = ({
         </button>
       </Flex>
 
-      <div className="space-y-4">
+      <Flex className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {creatives.map((creative) => {
           const categoryConfig = CATEGORY_DISPLAY[creative.category as keyof typeof CATEGORY_DISPLAY];
           const statusDisplay = getStatusDisplay(creative.status);
 
           return (
-            <div key={creative.id} className="glass rounded-lg p-6 hover:bg-white/5 transition-all">
-              <Flex className="flex justify-between items-start mb-3">
-                <div className="flex-1">
-                  <Heading as="h4" size="3" className="text-white mb-2">
+            <Box 
+              key={creative.id} 
+              className="glass rounded-2xl overflow-hidden hover:scale-105 transition-all duration-300 group cursor-pointer"
+              onClick={() => navigate(`/creative/${creative.id}`)}
+            >
+              <div className="relative h-48 overflow-hidden bg-gradient-to-br from-blue-500/20 to-purple-500/20">
+                <div className="absolute inset-0 bg-grid bg-[length:40px_40px] opacity-20"></div>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+                
+                <div className="absolute top-4 right-4">
+                  <span className={`px-2 py-1 rounded-full text-xs ${statusDisplay.color} bg-black/30 backdrop-blur-sm`}>
+                    {statusDisplay.text}
+                  </span>
+                </div>
+                
+                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+                  <div className="text-6xl opacity-30">
+                    {categoryConfig?.icon || '💡'}
+                  </div>
+                </div>
+                
+                <div className="absolute bottom-4 left-4 right-4">
+                  <Heading as="h4" size="3" className="text-white font-medium mb-1 line-clamp-1">
                     {creative.title}
                   </Heading>
-                  <Text size="2" className="text-gray-300 line-clamp-2">
+                  <Text size="1" className="text-gray-300 line-clamp-2">
                     {creative.description}
                   </Text>
                 </div>
-                <div className="ml-4 text-right">
-                  <div className={`text-sm ${statusDisplay.color}`}>
-                    {statusDisplay.text}
-                  </div>
-                  <Text size="1" className="text-gray-500">
-                    {formatAddress(creative.creator)}
-                  </Text>
-                </div>
-              </Flex>
-
-              <Flex className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                  {/* 分类标签 */}
+              </div>
+              
+              <div className="p-4">
+                <div className="flex items-center justify-between mb-3">
                   {categoryConfig && (
                     <span 
-                      className="inline-flex items-center px-2 py-1 rounded-full text-xs"
+                      className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium"
                       style={{ 
                         backgroundColor: `${categoryConfig.color}20`,
                         color: categoryConfig.color,
@@ -199,14 +211,19 @@ const CreativeList: React.FC<CreativeListProps> = ({
                       {categoryConfig.icon} {categoryConfig.name}
                     </span>
                   )}
-
-                  {/* 标签 */}
-                  <div className="flex flex-wrap gap-1">
-                    {creative.tags.slice(0, 3).map((tag) => {
+                  <Text size="1" className="text-gray-500">
+                    {formatAddress(creative.creator)}
+                  </Text>
+                </div>
+                
+                {/* 标签显示 */}
+                {creative.tags && creative.tags.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mb-2">
+                    {creative.tags.slice(0, 3).map((tag, index) => {
                       const tagConfig = TAG_DISPLAY[tag];
                       return (
                         <span
-                          key={tag}
+                          key={index}
                           className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-gray-700/50 text-gray-300"
                         >
                           {tagConfig?.name || tag}
@@ -219,26 +236,28 @@ const CreativeList: React.FC<CreativeListProps> = ({
                       </span>
                     )}
                   </div>
-                </div>
-
-                <div className="flex items-center space-x-4 text-sm text-gray-400">
-                  {creative.totalExpectation > 0 && (
-                    <div className="flex items-center">
-                      <svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                      </svg>
-                      {creative.totalExpectation}
-                    </div>
-                  )}
+                )}
+                
+                <div className="flex items-center justify-between text-sm text-gray-400">
+                  <div className="flex items-center space-x-2">
+                    {creative.totalExpectation > 0 && (
+                      <div className="flex items-center">
+                        <svg className="w-4 h-4 mr-1 text-red-400" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                        </svg>
+                        {creative.totalExpectation}
+                      </div>
+                    )}
+                  </div>
                   <div>
-                    {new Date(creative.createdAt * 1000).toLocaleDateString()}
+                    {new Date(creative.createdAt).toLocaleDateString()}
                   </div>
                 </div>
-              </Flex>
-            </div>
+              </div>
+            </Box>
           );
         })}
-      </div>
+      </Flex>
 
       {creatives.length >= limit && (
         <Box className="text-center mt-6">

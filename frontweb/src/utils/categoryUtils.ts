@@ -10,6 +10,7 @@ export interface Creative {
   created_at: number;
   total_expectation: number;
   views: number;
+  status?: number;
 }
 
 export interface FilterOptions {
@@ -54,11 +55,22 @@ export const filterCreatives = (creatives: Creative[], filters: FilterOptions): 
       }
     }
 
-    // 状态筛选
+    // 状态筛选 - 基于创意的实际状态
     if (filters.status && filters.status.length > 0) {
-      const hasMatchingStatus = filters.status.some(status => 
-        creative.tags && creative.tags.includes(status)
-      );
+      // 将状态值映射到数字
+      const statusMap: { [key: string]: number } = {
+        'concept': 0,
+        'development': 1,
+        'testing': 2,
+        'released': 3,
+        'maintained': 4
+      };
+      
+      const hasMatchingStatus = filters.status.some(status => {
+        const statusValue = statusMap[status];
+        return statusValue !== undefined && creative.status === statusValue;
+      });
+      
       if (!hasMatchingStatus) {
         return false;
       }

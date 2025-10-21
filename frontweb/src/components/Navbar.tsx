@@ -3,6 +3,7 @@ import { Box, Flex, Text } from '@radix-ui/themes';
 import { useNavigate } from 'react-router-dom';
 import NetworkSelector from './NetworkSelector';
 import WalletBalance from './WalletBalance';
+import PointsBalance from './PointsBalance';
 import LanguageSelector from './LanguageSelector';
 import { useLanguage } from '../contexts/LanguageContext';
 
@@ -45,11 +46,18 @@ const Navbar = () => {
             >
               创意分类
             </Text>
+            <Text 
+              className="text-gray-400 hover:text-gray-200 cursor-pointer transition-colors"
+              onClick={() => navigate('/points')}
+            >
+              {t('nav.points')}
+            </Text>
             <Text className="text-gray-400 hover:text-gray-200 cursor-pointer transition-colors">{t('nav.market')}</Text>
             <Text className="text-gray-400 hover:text-gray-200 cursor-pointer transition-colors">{t('nav.assets')}</Text>
           </Flex>
         </Flex>
         <Flex align="center" gap="3">
+          <PointsBalance />
           <WalletBalance />
           <LanguageSelector />
           <NetworkSelector />

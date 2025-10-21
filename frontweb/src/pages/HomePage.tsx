@@ -140,90 +140,14 @@ const HomePage = () => {
           </Flex>
         </Box>
 
-        {/* 创意展示模块 */}
+        {/* 创意作品展示 */}
         <Box className="mb-12">
           <Box className="text-center mb-8">
-            <Heading as="h2" size="6" className="text-black mb-6 animate-pulse-slow">创意作品展示</Heading>
+            <Heading as="h2" size="6" className="text-black mb-6 animate-pulse-slow">精选创意作品</Heading>
             <Text size="3" className="text-gray-500">发现精彩创意，探索无限可能</Text>
           </Box>
           
-          <Flex className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {/* 创意作品展示卡片 1 */}
-            <Box 
-              className="glass rounded-2xl overflow-hidden hover:scale-105 transition-all duration-300 group cursor-pointer"
-              onClick={()=>handeleGoto()}
-            >
-              <div className="relative h-48 overflow-hidden">
-                <img 
-                  src="/images/creative1.jpg" 
-                  alt="科幻城市概念" 
-                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
-                <div className="absolute bottom-4 left-4 right-4">
-                  <Text size="2" className="text-white font-medium block mb-1">科幻城市概念</Text>
-                  <Text size="1" className="text-gray-300">未来都市建筑设计</Text>
-                </div>
-              </div>
-            </Box>
-            
-            {/* 创意作品展示卡片 2 */}
-            <Box 
-              className="glass rounded-2xl overflow-hidden hover:scale-105 transition-all duration-300 group cursor-pointer"
-              onClick={() => handleCreativeClick(2)}
-            >
-              <div className="relative h-48 overflow-hidden">
-                <img 
-                  src="https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=400&h=300&fit=crop" 
-                  alt="虚拟角色设计" 
-                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
-                <div className="absolute bottom-4 left-4 right-4">
-                  <Text size="2" className="text-white font-medium block mb-1">虚拟角色设计</Text>
-                  <Text size="1" className="text-gray-300">数字艺术角色创作</Text>
-                </div>
-              </div>
-            </Box>
-            
-            {/* 创意作品展示卡片 3 */}
-            <Box 
-              className="glass rounded-2xl overflow-hidden hover:scale-105 transition-all duration-300 group cursor-pointer"
-              onClick={() => handleCreativeClick(3)}
-            >
-              <div className="relative h-48 overflow-hidden">
-                <img 
-                  src="https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=400&h=300&fit=crop" 
-                  alt="游戏场景概念" 
-                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
-                <div className="absolute bottom-4 left-4 right-4">
-                  <Text size="2" className="text-white font-medium block mb-1">游戏场景概念</Text>
-                  <Text size="1" className="text-gray-300">沉浸式游戏环境</Text>
-                </div>
-              </div>
-            </Box>
-            
-            {/* 创意作品展示卡片 4 */}
-            <Box 
-              className="glass rounded-2xl overflow-hidden hover:scale-105 transition-all duration-300 group cursor-pointer"
-              onClick={() => handleCreativeClick(4)}
-            >
-              <div className="relative h-48 overflow-hidden">
-                <img 
-                  src="https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=400&h=300&fit=crop" 
-                  alt="创新产品设计" 
-                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
-                <div className="absolute bottom-4 left-4 right-4">
-                  <Text size="2" className="text-white font-medium block mb-1">创新产品设计</Text>
-                  <Text size="1" className="text-gray-300">科技感UI/UX设计</Text>
-                </div>
-              </div>
-            </Box>
-          </Flex>
+          <CreativeList limit={4} showFilters={false} />
           
           {/* 查看更多按钮 */}
           <Box className="text-center mt-8">

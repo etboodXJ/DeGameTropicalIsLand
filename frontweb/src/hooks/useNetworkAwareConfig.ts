@@ -14,8 +14,8 @@ const NETWORK_CONFIGS = {
     rpcUrl: 'https://fullnode.testnet.sui.io:443',
     explorerUrl: 'https://suiscan.xyz/testnet',
     faucetUrl: 'https://faucet.testnet.sui.io/',
-    packageId: '0xa12b3f7f8f16a8174ec71bef54d9ad4f7c3b045401c41acb83bbfa2cf4a50ca9', // 测试网合约地址 (需要部署后填入)
-    sharedCreativesId: '0xfa81074a0744889409c2eff90f376512252d02c1ea401ce52b1829e6ffd2aa1e' // 测试网共享对象ID
+    packageId: '0xcafba38c8bf232964ca2849d02a97729c054b8a6dc4c7f43298dc4ec6a76c45f', // 测试网合约地址 (需要部署后填入)
+    sharedCreativesId: '0x779f3ef091c7a9c7b8c069c12bd404eb4f8eab7082f029c6205a5c937e6ef188' // 测试网共享对象ID
   },
   devnet: {
     rpcUrl: 'https://fullnode.devnet.sui.io:443',
