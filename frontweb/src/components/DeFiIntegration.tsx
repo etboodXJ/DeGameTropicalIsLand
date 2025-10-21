@@ -5,6 +5,7 @@ import { Transaction } from '@mysten/sui/transactions';
 import { usePoints } from '../hooks/usePoints';
 import { BucketService } from '../services/bucketService';
 import { CetusService } from '../services/cetusService';
+import { NaviService } from '../services/naviService';
 import { useSuiClient } from '@mysten/dapp-kit';
 
 interface DeFiIntegrationProps {
@@ -17,6 +18,7 @@ const DeFiIntegration: React.FC<DeFiIntegrationProps> = ({ platform, onBack }) =
   const [isLoading, setIsLoading] = useState(false);
   const [bucketService, setBucketService] = useState<BucketService | null>(null);
   const [cetusService, setCetusService] = useState<CetusService | null>(null);
+  const [naviService, setNaviService] = useState<NaviService | null>(null);
   const [userBalance, setUserBalance] = useState<any>(null);
   const [balanceLoading, setBalanceLoading] = useState(false);
   const currentAccount = useCurrentAccount();
@@ -52,6 +54,20 @@ const DeFiIntegration: React.FC<DeFiIntegrationProps> = ({ platform, onBack }) =
     }
   }, [platform, currentAccount, suiClient]);
 
+  // 初始化 NaviService
+  useEffect(() => {
+    if (platform === 'navi' && suiClient) {
+      const service = new NaviService();
+      service.initialize(suiClient);
+      setNaviService(service);
+      
+      // 获取用户持仓信息
+      if (currentAccount?.address) {
+        fetchUserPositions(service, currentAccount.address);
+      }
+    }
+  }, [platform, currentAccount, suiClient]);
+
   // 获取用户余额
   const fetchUserBalance = async (service: BucketService, userAddress: string) => {
     setBalanceLoading(true);
@@ -76,6 +92,27 @@ const DeFiIntegration: React.FC<DeFiIntegrationProps> = ({ platform, onBack }) =
       });
     } catch (error) {
       console.error('获取流动性位置失败:', error);
+    } finally {
+      setBalanceLoading(false);
+    }
+  };
+
+  // 获取用户持仓信息 (Navi)
+  const fetchUserPositions = async (service: NaviService, userAddress: string) => {
+    setBalanceLoading(true);
+    try {
+      const positions = await service.getUserPositions(userAddress);
+      const accountOverview = await service.getAccountOverview(userAddress);
+      setUserBalance({
+        positions: positions,
+        accountOverview: accountOverview,
+        totalSupply: accountOverview?.totalSupply || '0',
+        totalBorrow: accountOverview?.totalBorrow || '0',
+        healthFactor: accountOverview?.healthFactor || 0,
+        borrowingPower: accountOverview?.borrowingPower || '0'
+      });
+    } catch (error) {
+      console.error('获取持仓信息失败:', error);
     } finally {
       setBalanceLoading(false);
     }
@@ -185,6 +222,41 @@ const DeFiIntegration: React.FC<DeFiIntegrationProps> = ({ platform, onBack }) =
             }
           }
         );
+      } else if (platform === 'navi' && naviService) {
+        // 使用 NaviService 进行真实存款
+        const tx = await naviService.buildDepositTransaction({
+          token: 'SUI',
+          amount: parseFloat(amount),
+          user: currentAccount.address,
+          enableCollateral: true
+        });
+
+        // 执行交易
+        signAndExecute(
+          { transaction: tx },
+          {
+            onSuccess: (result) => {
+              console.log('Navi存款交易成功:', result);
+              
+              // 计算积分：Navi 存款获得更多积分奖励 (1.2倍)
+              const earnedPoints = Math.floor(parseFloat(amount) * 120);
+              
+              // 添加积分记录
+              addPoints(platform, parseFloat(amount), result.digest);
+              
+              // 刷新持仓信息
+              fetchUserPositions(naviService, currentAccount.address);
+              
+              setAmount('');
+              alert(`成功存入 ${amount} SUI，获得 ${earnedPoints} CYKJ积分！`);
+            },
+            onError: (error) => {
+              console.error('Navi存款交易失败:', error);
+              const errorMessage = naviService.handleTransactionError(error);
+              alert(`存款失败: ${errorMessage}`);
+            }
+          }
+        );
       } else {
         // 其他平台的模拟逻辑
         const tx = new Transaction();
@@ -254,6 +326,10 @@ const DeFiIntegration: React.FC<DeFiIntegrationProps> = ({ platform, onBack }) =
         // Cetus 添加流动性获得更多积分奖励 (1.5倍)
         earnedPoints = Math.floor(parseFloat(amount) * 150);
         actionText = `添加流动性 ${amount} SUI`;
+      } else if (platform === 'navi') {
+        // Navi 存款获得更多积分奖励 (1.2倍)
+        earnedPoints = Math.floor(parseFloat(amount) * 120);
+        actionText = `存入 ${amount} SUI`;
       } else {
         // 其他平台每存入1 SUI获得100 CYKJ积分
         earnedPoints = Math.floor(parseFloat(amount) * 100);
@@ -268,6 +344,8 @@ const DeFiIntegration: React.FC<DeFiIntegrationProps> = ({ platform, onBack }) =
         fetchUserBalance(bucketService, currentAccount?.address || '');
       } else if (platform === 'cetus' && cetusService) {
         fetchUserLiquidityPositions(cetusService, currentAccount?.address || '');
+      } else if (platform === 'navi' && naviService) {
+        fetchUserPositions(naviService, currentAccount?.address || '');
       }
       
       setAmount('');
@@ -366,10 +444,38 @@ const DeFiIntegration: React.FC<DeFiIntegrationProps> = ({ platform, onBack }) =
           </Box>
         )}
 
-        {(platform === 'bucket' || platform === 'cetus') && balanceLoading && (
+        {/* 显示用户持仓信息 (Navi平台) */}
+        {platform === 'navi' && userBalance && (
+          <Box className="mb-6 p-4 bg-green-500/10 border border-green-500/30 rounded-lg">
+            <Text size="2" className="text-green-600 block mb-2 font-medium">
+              🏦 您的借贷持仓
+            </Text>
+            <Flex direction="column" gap="1">
+              <Text size="2" className="text-green-700">
+                总存款: {parseFloat(userBalance.totalSupply || '0').toFixed(4)} SUI
+              </Text>
+              <Text size="2" className="text-green-700">
+                总借款: {parseFloat(userBalance.totalBorrow || '0').toFixed(4)} SUI
+              </Text>
+              <Text size="2" className="text-green-700">
+                净持仓: {(parseFloat(userBalance.totalSupply || '0') - parseFloat(userBalance.totalBorrow || '0')).toFixed(4)} SUI
+              </Text>
+              <Text size="2" className={`text-green-700 font-medium`}>
+                健康因子: {parseFloat(userBalance.healthFactor?.toString() || '0').toFixed(2)}
+              </Text>
+              <Text size="2" className="text-green-700">
+                借款能力: {parseFloat(userBalance.borrowingPower || '0').toFixed(4)} SUI
+              </Text>
+            </Flex>
+          </Box>
+        )}
+
+        {balanceLoading && (
           <Box className="mb-6 p-4 bg-gray-500/10 border border-gray-500/30 rounded-lg">
             <Text size="2" className="text-gray-600">
-              {platform === 'bucket' ? '正在加载余额...' : '正在加载流动性位置...'}
+              {platform === 'bucket' ? '正在加载余额...' : 
+               platform === 'cetus' ? '正在加载流动性位置...' : 
+               '正在加载持仓信息...'}
             </Text>
           </Box>
         )}
@@ -397,6 +503,8 @@ const DeFiIntegration: React.FC<DeFiIntegrationProps> = ({ platform, onBack }) =
           <Text size="2" className="text-yellow-700">
             {platform === 'cetus' 
               ? '• 每添加 1 SUI 流动性 = 150 CYKJ 积分 (1.5倍奖励)'
+              : platform === 'navi'
+              ? '• 每存入 1 SUI = 120 CYKJ 积分 (1.2倍奖励)'
               : '• 每存入 1 SUI = 100 CYKJ 积分'
             }
           </Text>
@@ -407,6 +515,8 @@ const DeFiIntegration: React.FC<DeFiIntegrationProps> = ({ platform, onBack }) =
             <Text size="2" className="text-yellow-800 mt-2 font-medium">
               预计获得: {platform === 'cetus' 
                 ? Math.floor(parseFloat(amount || '0') * 150)
+                : platform === 'navi'
+                ? Math.floor(parseFloat(amount || '0') * 120)
                 : Math.floor(parseFloat(amount || '0') * 100)
               } CYKJ
             </Text>
@@ -432,6 +542,7 @@ const DeFiIntegration: React.FC<DeFiIntegrationProps> = ({ platform, onBack }) =
           >
             {platform === 'bucket' ? 'Bucket 存款' : 
              platform === 'cetus' ? 'Cetus 添加流动性' : 
+             platform === 'navi' ? 'Navi 存款' :
              '真实存款 (需要SDK)'}
           </Button>
         </Flex>
