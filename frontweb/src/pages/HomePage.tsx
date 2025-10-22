@@ -143,7 +143,7 @@ const HomePage = () => {
 
       
       <Box className="p-6 border-t border-gray-300">
-        <Text className="text-center text-gray-600">© 2023 创意空间 - 构建去中心化未来</Text>
+        <Text className="text-center text-gray-600">© 2025 创意空间 - 构建去中心化未来</Text>
       </Box>
     </Box>
   );

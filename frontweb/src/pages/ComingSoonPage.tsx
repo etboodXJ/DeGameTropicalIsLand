@@ -106,11 +106,21 @@ const ComingSoonPage = () => {
               关注我们的最新动态
             </Text>
             <Flex justify="center" gap="6">
-              <a href="#" className="text-gray-300 hover:text-white transition-colors">
+              <button 
+                onClick={() => {
+                  const email = 'etbood@gmail.com';
+                  navigator.clipboard.writeText(email).then(() => {
+                    alert(`邮箱地址已复制到剪贴板：\n${email}`);
+                  }).catch(() => {
+                    alert(`联系邮箱：${email}`);
+                  });
+                }}
+                className="text-gray-300 hover:text-white transition-colors cursor-pointer"
+              >
                 <span className="text-xl">📧</span>
                 <Text size="1" className="ml-2">邮件订阅</Text>
-              </a>
-              <a href="#" className="text-gray-300 hover:text-white transition-colors">
+              </button>
+              <a href="https://x.com/SdSummer2" className="text-gray-300 hover:text-white transition-colors">
                 <span className="text-xl">🐦</span>
                 <Text size="1" className="ml-2">Twitter</Text>
               </a>
