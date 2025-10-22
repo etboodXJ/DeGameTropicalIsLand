@@ -13,7 +13,8 @@ const MyPointsPage = () => {
   const platforms = {
     bucket: { name: 'Bucket Protocol', icon: 'BUCKET', color: 'blue' },
     cetus: { name: 'Cetus Protocol', icon: 'CETUS', color: 'purple' },
-    navi: { name: 'Navi Protocol', icon: 'NAVI', color: 'green' }
+    navi: { name: 'Navi Protocol', icon: 'NAVI', color: 'green' },
+    spend: { name: '积分消费', icon: 'SPEND', color: 'red' }
   };
 
   if (!currentAccount) {
@@ -92,7 +93,7 @@ const MyPointsPage = () => {
           ) : (
             <Box className="space-y-4">
               {records.map((record) => {
-                const platform = platforms[record.platform];
+                const platform = platforms[record.platform as keyof typeof platforms];
                 return (
                   <Box
                     key={record.id}

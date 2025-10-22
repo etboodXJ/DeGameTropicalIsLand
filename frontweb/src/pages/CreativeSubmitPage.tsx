@@ -4,6 +4,7 @@ import { useCurrentAccount, useSignAndExecuteTransaction } from '@mysten/dapp-ki
 import { Transaction } from '@mysten/sui/transactions';
 import { CATEGORIES, CATEGORY_DISPLAY, TAG_DISPLAY } from '../config/categories';
 import { useNetworkAwareConfig } from '../hooks/useNetworkAwareConfig';
+import { stringifyCreativeContent } from '../utils/contentUtils';
 import Navbar from '../components/Navbar';
 import { Box, Container, Heading, Text } from '@radix-ui/themes';
 
@@ -11,6 +12,7 @@ interface FormData {
   title: string;
   description: string;
   content: string;
+  backgroundImage: string;
   category: string;
   tags: string[];
   creativeType: number;
@@ -21,6 +23,7 @@ const CreativeSubmitPage: React.FC = () => {
     title: '',
     description: '',
     content: '',
+    backgroundImage: '',
     category: '',
     tags: [],
     creativeType: 0
@@ -118,13 +121,21 @@ const CreativeSubmitPage: React.FC = () => {
     try {
       const tx = new Transaction();
       
+      // 将内容和背景图片封装为JSON
+      const contentJson = stringifyCreativeContent({
+        text: formData.content || formData.description,
+        background_image: formData.backgroundImage,
+        media: [],
+        thumbnail: ''
+      });
+
       // 调用智能合约的 submit_creative_to_shared 函数
       tx.moveCall({
         target: `${packageId}::creative::submit_creative_to_shared`,
         arguments: [
           tx.pure.string(formData.title),
           tx.pure.string(formData.description),
-          tx.pure.string(formData.content || ''),
+          tx.pure.string(contentJson),
           tx.pure.u8(formData.creativeType),
           tx.pure.string(formData.category),
           tx.pure.vector('string', formData.tags),
@@ -239,6 +250,34 @@ const CreativeSubmitPage: React.FC = () => {
                   required
                 />
                 <div className="text-xs text-gray-500 mt-1">{formData.description.length}/500</div>
+              </div>
+
+              {/* 背景图片 */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  背景图片 (可选)
+                </label>
+                <input 
+                  type="url" 
+                  value={formData.backgroundImage}
+                  onChange={(e) => handleInputChange('backgroundImage', e.target.value)}
+                  className="w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent text-gray-800 placeholder-gray-500"
+                  style={{ position: 'relative', zIndex: 3001, pointerEvents: 'auto' }}
+                  placeholder="请输入背景图片URL地址"
+                />
+                <div className="text-xs text-gray-500 mt-1">建议使用高质量图片，尺寸为 800x600 或更大</div>
+                {formData.backgroundImage && (
+                  <div className="mt-2">
+                    <img 
+                      src={formData.backgroundImage} 
+                      alt="背景预览" 
+                      className="w-full h-32 object-cover rounded-lg border"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                      }}
+                    />
+                  </div>
+                )}
               </div>
 
               {/* 详细内容 */}

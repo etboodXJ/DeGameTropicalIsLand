@@ -4,7 +4,10 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useSuiClient, useCurrentAccount, useSignAndExecuteTransaction } from '@mysten/dapp-kit';
 import { Transaction } from '@mysten/sui/transactions';
 import { useNetworkAwareConfig } from '../hooks/useNetworkAwareConfig';
+import { usePoints } from '../hooks/usePoints';
+import { useCreativeLikes } from '../hooks/useCreativeLikes';
 import { CATEGORY_DISPLAY, TAG_DISPLAY } from '../config/categories';
+import { parseCreativeContent, updateBackgroundImage } from '../utils/contentUtils';
 import Navbar from '../components/Navbar';
 
 const CreativeDetailPage = () => {
@@ -14,16 +17,72 @@ const CreativeDetailPage = () => {
   const currentAccount = useCurrentAccount();
   const { mutate: signAndExecute } = useSignAndExecuteTransaction();
   const { packageId, isContractDeployed } = useNetworkAwareConfig();
+  const { points, spendPoints } = usePoints();
+  const { likeCreative, getCreativeExpectation, hasUserLiked, getUserLikePoints } = useCreativeLikes();
   
   const [creative, setCreative] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [likeAmount, setLikeAmount] = useState(10);
+  const [isLiking, setIsLiking] = useState(false);
+  const [showBgModal, setShowBgModal] = useState(false);
+  const [bgImageUrl, setBgImageUrl] = useState('');
+  const [isEditingDesc, setIsEditingDesc] = useState(false);
+  const [editedDescription, setEditedDescription] = useState('');
 
   // 获取创意详情
   useEffect(() => {
     const fetchCreative = async () => {
-      if (!id || !isContractDeployed || !packageId) {
-        setError('参数错误或合约未部署');
+      if (!id) {
+        setError('创意ID不能为空');
+        setLoading(false);
+        return;
+      }
+
+      // 处理测试创意
+      if (id.startsWith('test-creative-')) {
+        const testCreatives = {
+          'test-creative-1': {
+            id: 'test-creative-1',
+            title: '测试创意：AI生成的游戏角色',
+            description: '这是一个使用AI技术生成的游戏角色设计，包含完整的动画序列和技能效果。角色设计融合了现代科技感和传统文化元素，具有独特的视觉风格和丰富的背景故事。',
+            category: 'game_assets',
+            tags: ['AI生成', '游戏角色', '动画', '科技'],
+            creator: currentAccount?.address || '0x123...abc',
+            createdAt: Date.now(),
+            content: JSON.stringify({
+              text: '这是一个使用AI技术生成的游戏角色设计，包含完整的动画序列和技能效果。',
+              background_image: 'https://images.unsplash.com/photo-1518709268805-4e9042af2176?w=800&h=600&fit=crop'
+            })
+          },
+          'test-creative-2': {
+            id: 'test-creative-2',
+            title: '测试创意：区块链游戏概念',
+            description: '一个基于区块链的策略游戏概念，玩家可以真正拥有游戏内资产。游戏采用去中心化的经济模型，玩家的每一个决策都会影响整个游戏世界的发展。',
+            category: 'game_concept',
+            tags: ['区块链', '策略游戏', '去中心化', 'NFT'],
+            creator: currentAccount?.address || '0x456...def',
+            createdAt: Date.now(),
+            content: JSON.stringify({
+              text: '一个基于区块链的策略游戏概念，玩家可以真正拥有游戏内资产。',
+              background_image: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?w=800&h=600&fit=crop'
+            })
+          }
+        };
+        
+        const testCreative = testCreatives[id as keyof typeof testCreatives];
+        if (testCreative) {
+          setCreative(testCreative);
+        } else {
+          setError('测试创意不存在');
+        }
+        setLoading(false);
+        return;
+      }
+
+      // 处理真实创意（需要合约部署）
+      if (!isContractDeployed || !packageId) {
+        setError('合约未部署，无法获取链上创意');
         setLoading(false);
         return;
       }
@@ -47,15 +106,47 @@ const CreativeDetailPage = () => {
 
         if (targetEvent && targetEvent.parsedJson) {
           const data = targetEvent.parsedJson as any;
-          setCreative({
-            id: data.creative_id,
-            title: data.title,
-            description: data.description,
-            category: data.category,
-            tags: data.tags || [],
-            creator: data.creator,
-            createdAt: parseInt(data.created_at)
-          });
+          
+          try {
+            // 获取完整的创意对象信息
+            const creativeObject = await suiClient.getObject({
+              id: data.creative_id,
+              options: {
+                showContent: true,
+                showType: true
+              }
+            });
+
+            let content = '';
+            if (creativeObject.data?.content && 'fields' in creativeObject.data.content) {
+              const fields = creativeObject.data.content.fields as any;
+              content = fields.content || '';
+            }
+            
+            setCreative({
+              id: data.creative_id,
+              title: data.title,
+              description: data.description,
+              content: content,
+              category: data.category,
+              tags: data.tags || [],
+              creator: data.creator,
+              createdAt: parseInt(data.created_at)
+            });
+          } catch (err) {
+            console.error('获取创意对象失败:', err);
+            // 如果获取对象失败，使用事件数据
+            setCreative({
+              id: data.creative_id,
+              title: data.title,
+              description: data.description,
+              content: '',
+              category: data.category,
+              tags: data.tags || [],
+              creator: data.creator,
+              createdAt: parseInt(data.created_at)
+            });
+          }
         } else {
           setError('未找到该创意');
         }
@@ -68,7 +159,7 @@ const CreativeDetailPage = () => {
     };
 
     fetchCreative();
-  }, [id, packageId, isContractDeployed]);
+  }, [id, packageId, isContractDeployed, currentAccount?.address]);
 
   const handleBack = () => {
     navigate('/');
@@ -80,6 +171,74 @@ const CreativeDetailPage = () => {
 
   // 检查是否为创作者
   const isCreator = currentAccount && creative && currentAccount.address === creative.creator;
+  
+  // 获取创意期待值信息
+  const expectation = creative ? getCreativeExpectation(creative.id) : null;
+  const userHasLiked = creative ? hasUserLiked(creative.id) : false;
+  const userLikePoints = creative ? getUserLikePoints(creative.id) : 0;
+
+  // 处理点赞
+  const handleLike = async () => {
+    if (!creative || !currentAccount || userHasLiked || isLiking) return;
+    
+    if (points < likeAmount) {
+      alert(`积分不足！当前积分：${points} CYKJ，需要：${likeAmount} CYKJ`);
+      return;
+    }
+
+    setIsLiking(true);
+    
+    try {
+      // 消费积分
+      const success = spendPoints(likeAmount, `点赞创意: ${creative.title}`);
+      if (!success) {
+        alert('积分消费失败');
+        setIsLiking(false);
+        return;
+      }
+
+      // 记录点赞
+      const likeSuccess = likeCreative(creative.id, likeAmount);
+      if (!likeSuccess) {
+        alert('点赞失败，可能已经点赞过了');
+        setIsLiking(false);
+        return;
+      }
+
+      alert(`点赞成功！消费 ${likeAmount} CYKJ 积分，为创意增加了 ${likeAmount} 观众期待值！`);
+    } catch (err) {
+      console.error('点赞失败:', err);
+      alert('点赞失败，请重试');
+    } finally {
+      setIsLiking(false);
+    }
+  };
+
+  const handleUpdateBackground = () => {
+    if (!creative || !currentAccount || !isCreator) return;
+    
+    if (!bgImageUrl.trim()) {
+      alert('请输入背景图片URL');
+      return;
+    }
+
+    try {
+      // 更新本地数据
+      const updatedContent = updateBackgroundImage(creative.content || '{}', bgImageUrl);
+      setCreative({
+        ...creative,
+        content: updatedContent
+      });
+      
+      setShowBgModal(false);
+      setBgImageUrl('');
+      // TODO: 后续可以添加链上更新content字段的功能
+      alert('背景图片更新成功！（仅本地更新）');
+    } catch (err) {
+      console.error('更新背景失败:', err);
+      alert('更新背景失败，请重试');
+    }
+  };
 
   if (loading) {
     return (
@@ -107,6 +266,7 @@ const CreativeDetailPage = () => {
   }
 
   const categoryConfig = CATEGORY_DISPLAY[creative.category as keyof typeof CATEGORY_DISPLAY];
+  const creativeContent = creative ? parseCreativeContent(creative.content || '{}') : null;
 
   return (
     <Box className="min-h-screen">
@@ -125,13 +285,27 @@ const CreativeDetailPage = () => {
       <Container className="container mx-auto p-6 relative z-10">
         {/* 作品展示区域 */}
         <Box className="glass rounded-2xl overflow-hidden mb-8">
-          <div className="relative h-96 md:h-[500px] overflow-hidden bg-gradient-to-br from-blue-500/20 to-purple-500/20">
-            <div className="absolute inset-0 bg-grid bg-[length:40px_40px] opacity-20"></div>
-            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-              <div className="text-8xl opacity-30">
-                {categoryConfig?.icon || '💡'}
-              </div>
-            </div>
+          <div 
+            className="relative h-96 md:h-[500px] overflow-hidden bg-gradient-to-br from-blue-500/20 to-purple-500/20"
+            style={{
+              backgroundImage: creativeContent?.background_image 
+                ? `url(${creativeContent.background_image})` 
+                : undefined,
+              backgroundSize: 'contain',
+              backgroundPosition: 'center',
+              backgroundRepeat: 'no-repeat'
+            }}
+          >
+            {!creativeContent?.background_image && (
+              <>
+                <div className="absolute inset-0 bg-grid bg-[length:40px_40px] opacity-20"></div>
+                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+                  <div className="text-8xl opacity-30">
+                    {categoryConfig?.icon || '💡'}
+                  </div>
+                </div>
+              </>
+            )}
             <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent"></div>
             <div className="absolute bottom-8 left-8 right-8 text-white">
               <Heading as="h1" size="8" className="mb-4">{creative.title}</Heading>
@@ -141,6 +315,14 @@ const CreativeDetailPage = () => {
                 <span>发布时间: {new Date(creative.createdAt).toLocaleString()}</span>
               </div>
             </div>
+            {isCreator && (
+              <button
+                onClick={() => setShowBgModal(true)}
+                className="absolute top-4 right-4 px-3 py-1 bg-black/50 hover:bg-black/70 text-white text-sm rounded-lg transition-colors"
+              >
+                🇺️ 修改背景
+              </button>
+            )}
           </div>
         </Box>
 
@@ -149,14 +331,91 @@ const CreativeDetailPage = () => {
           {/* 左侧详情 */}
           <Box className="lg:col-span-2">
             <Box className="glass rounded-2xl p-8">
-              <Heading as="h2" size="5" className="text-gray-100 mb-6">创意介绍</Heading>
-              <Text size="3" className="text-gray-500 leading-relaxed mb-6">
-                {creative.description}
-              </Text>
+              <Flex justify="between" align="center" className="mb-6">
+                <Heading as="h2" size="5" className="text-black">创意介绍</Heading>
+                {isCreator && (
+                  <button
+                    onClick={() => {
+                      setIsEditingDesc(true);
+                      setEditedDescription(creative.description);
+                    }}
+                    className="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded-lg transition-colors"
+                  >
+                    ✏️ 编辑
+                  </button>
+                )}
+              </Flex>
+              
+              {isEditingDesc && isCreator ? (
+                <div className="mb-6">
+                  <textarea
+                    value={editedDescription}
+                    onChange={(e) => setEditedDescription(e.target.value)}
+                    className="w-full p-3 rounded-lg border border-gray-300 bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    rows={6}
+                    placeholder="请输入创意描述..."
+                  />
+                  <div className="flex gap-2 mt-2">
+                    <button
+                      onClick={async () => {
+                        if (!packageId || !currentAccount) {
+                          alert('合约未部署或未连接钱包');
+                          return;
+                        }
+
+                        try {
+                          const tx = new Transaction();
+                          tx.moveCall({
+                            target: `${packageId}::creative::update_creative`,
+                            arguments: [
+                              tx.object(creative.id),
+                              tx.pure.option('string', null), // title
+                              tx.pure.option('string', editedDescription), // description
+                              tx.pure.option('string', null), // content
+                              tx.pure.option('string', null), // category
+                              tx.pure.option('vector<string>', null), // tags
+                            ],
+                          });
+
+                          await signAndExecute({ transaction: tx });
+                          
+                          setCreative({
+                            ...creative,
+                            description: editedDescription
+                          });
+                          setIsEditingDesc(false);
+                          alert('描述更新成功！');
+                        } catch (err) {
+                          console.error('更新失败:', err);
+                          alert('更新失败，请重试');
+                        }
+                      }}
+                      className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white text-sm rounded-lg transition-colors"
+                    >
+                      保存
+                    </button>
+                    <button
+                      onClick={() => {
+                        setIsEditingDesc(false);
+                        setEditedDescription('');
+                      }}
+                      className="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white text-sm rounded-lg transition-colors"
+                    >
+                      取消
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="mb-6">
+                  <Text size="3" className="text-gray-800 leading-relaxed whitespace-pre-wrap">
+                    {creative.description}
+                  </Text>
+                </div>
+              )}
               
 
 
-              <Heading as="h3" size="4" className="text-gray-100 mb-4">标签</Heading>
+              <Heading as="h3" size="4" className="text-black mb-4">标签</Heading>
               <Flex wrap="wrap" gap="2" className="mb-6">
                 {creative.tags && creative.tags.length > 0 ? (
                   creative.tags.map((tag: string, index: number) => (
@@ -176,8 +435,8 @@ const CreativeDetailPage = () => {
           {/* 右侧信息栏 */}
           <Box className="lg:col-span-1">
             <Box className="glass rounded-2xl p-6 mb-6">
-              <Heading as="h3" size="4" className="text-gray-100 mb-4">作品信息</Heading>
-              <div className="space-y-3 text-gray-500">
+              <Heading as="h3" size="4" className="text-black mb-4">作品信息</Heading>
+              <div className="space-y-3 text-gray-700">
                 <div>
                   <Text size="2" className="font-medium">分类</Text>
                   <Text size="1">{categoryConfig?.name || creative.category}</Text>
@@ -225,12 +484,64 @@ const CreativeDetailPage = () => {
               </div>
             </Box>
 
+            <Box className="glass rounded-2xl p-6 mb-6">
+              <Heading as="h3" size="4" className="text-black mb-4">观众期待值</Heading>
+              <div className="space-y-3 text-gray-700">
+                <div className="flex justify-between items-center">
+                  <Text size="2">总期待值</Text>
+                  <Text size="3" className="font-bold text-yellow-400">
+                    {expectation?.totalExpectation || 0} 🌟
+                  </Text>
+                </div>
+                <div className="flex justify-between items-center">
+                  <Text size="2">点赞人数</Text>
+                  <Text size="2">{expectation?.likeCount || 0} 人</Text>
+                </div>
+                {userHasLiked && (
+                  <div className="flex justify-between items-center">
+                    <Text size="2">我的贡献</Text>
+                    <Text size="2" className="text-green-400">{userLikePoints} CYKJ</Text>
+                  </div>
+                )}
+              </div>
+            </Box>
+
             <Box className="glass rounded-2xl p-6">
-              <Heading as="h3" size="4" className="text-gray-100 mb-4">互动操作</Heading>
+              <Heading as="h3" size="4" className="text-black mb-4">互动操作</Heading>
               <Flex direction="column" gap="3">
-                <Button className="bg-blue-500 hover:bg-blue-600 text-white">
-                  👍 点赞作品
-                </Button>
+                {!userHasLiked ? (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <Text size="2" className="text-gray-700">点赞积分:</Text>
+                      <input
+                        type="number"
+                        min="1"
+                        max={points}
+                        value={likeAmount}
+                        onChange={(e) => setLikeAmount(Math.max(1, parseInt(e.target.value) || 1))}
+                        className="w-20 px-2 py-1 bg-gray-700 border border-gray-600 rounded text-white text-sm"
+                      />
+                      <Text size="1" className="text-gray-400">CYKJ</Text>
+                    </div>
+                    <Text size="1" className="text-gray-600">
+                      当前积分: {points} CYKJ
+                    </Text>
+                    <Button 
+                      className={`${isLiking || points < likeAmount ? 'bg-gray-500' : 'bg-blue-500 hover:bg-blue-600'} text-white`}
+                      onClick={handleLike}
+                      disabled={isLiking || points < likeAmount || !currentAccount}
+                    >
+                      {isLiking ? '点赞中...' : `👍 点赞 (${likeAmount} CYKJ)`}
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="text-center py-4">
+                    <Text size="2" className="text-green-400">✅ 已点赞</Text>
+                    <Text size="1" className="text-gray-400 block mt-1">
+                      贡献了 {userLikePoints} CYKJ 观众期待值
+                    </Text>
+                  </div>
+                )}
                 <Button className="bg-purple-500 hover:bg-purple-600 text-white">
                   💬 收藏作品
                 </Button>
@@ -350,6 +661,47 @@ const CreativeDetailPage = () => {
 
 
       </Container>
+
+      {/* 背景图片修改模态框 */}
+      {showBgModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999]">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold mb-4 text-gray-800">修改背景图片</h3>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                图片URL地址
+              </label>
+              <input
+                type="url"
+                value={bgImageUrl}
+                onChange={(e) => setBgImageUrl(e.target.value)}
+                placeholder="请输入图片URL地址"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div className="text-xs text-gray-500 mb-4">
+              建议使用高质量图片，尺寸为 800x600 或更大
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowBgModal(false);
+                  setBgImageUrl('');
+                }}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                取消
+              </button>
+              <button
+                onClick={handleUpdateBackground}
+                className="flex-1 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors"
+              >
+                确认修改
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </Box>
   );
 };

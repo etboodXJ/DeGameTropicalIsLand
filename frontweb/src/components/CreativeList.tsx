@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useNetworkAwareConfig } from '../hooks/useNetworkAwareConfig';
 import { CATEGORY_DISPLAY, TAG_DISPLAY } from '../config/categories';
 import { CREATIVE_TYPES } from '../config/creativeTypes';
+import { parseCreativeContent } from '../utils/contentUtils';
 import { Box, Flex, Heading, Text } from '@radix-ui/themes';
 
 interface Creative {
@@ -11,6 +12,7 @@ interface Creative {
   creator: string;
   title: string;
   description: string;
+  content?: string;
   category: string;
   tags: string[];
   createdAt: number;
@@ -55,28 +57,59 @@ const CreativeList: React.FC<CreativeListProps> = ({
         order: 'descending'
       });
 
-      // 解析事件数据
+      // 解析事件数据并获取完整创意信息
       const creativesData: Creative[] = [];
       
       for (const event of events.data) {
         if (event.parsedJson) {
           const data = event.parsedJson as any;
           
-          // 调试信息：查看实际数据结构
-          console.log('Event data:', data);
-          
-          creativesData.push({
-            id: data.creative_id,
-            creator: data.creator,
-            title: data.title,
-            description: data.description,
-            category: data.category,
-            tags: data.tags || [],
-            createdAt: parseInt(data.created_at),
-            status: 1, // 已提交状态
-            totalExpectation: 0,
-            creativeType: data.creative_type !== undefined ? parseInt(data.creative_type) : 0
-          });
+          try {
+            // 获取完整的创意对象信息
+            const creativeObject = await suiClient.getObject({
+              id: data.creative_id,
+              options: {
+                showContent: true,
+                showType: true
+              }
+            });
+
+            let content = '';
+            if (creativeObject.data?.content && 'fields' in creativeObject.data.content) {
+              const fields = creativeObject.data.content.fields as any;
+              content = fields.content || '';
+            }
+            
+            creativesData.push({
+              id: data.creative_id,
+              creator: data.creator,
+              title: data.title,
+              description: data.description,
+              content: content,
+              category: data.category,
+              tags: data.tags || [],
+              createdAt: parseInt(data.created_at),
+              status: 1,
+              totalExpectation: 0,
+              creativeType: data.creative_type !== undefined ? parseInt(data.creative_type) : 0
+            });
+          } catch (err) {
+            console.error('获取创意对象失败:', err);
+            // 如果获取对象失败，仍然使用事件数据
+            creativesData.push({
+              id: data.creative_id,
+              creator: data.creator,
+              title: data.title,
+              description: data.description,
+              content: '',
+              category: data.category,
+              tags: data.tags || [],
+              createdAt: parseInt(data.created_at),
+              status: 1,
+              totalExpectation: 0,
+              creativeType: data.creative_type !== undefined ? parseInt(data.creative_type) : 0
+            });
+          }
         }
       }
       
@@ -177,7 +210,17 @@ const CreativeList: React.FC<CreativeListProps> = ({
               className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 group cursor-pointer border border-gray-200 overflow-hidden"
               onClick={() => navigate(`/creative/${creative.id}`)}
             >
-              <div className="relative h-48 overflow-hidden bg-gradient-to-br from-blue-50 to-purple-50">
+              <div 
+                className="relative h-48 overflow-hidden bg-gradient-to-br from-blue-50 to-purple-50"
+                style={{
+                  backgroundImage: (() => {
+                    const creativeContent = parseCreativeContent(creative.content || '{}');
+                    return creativeContent.background_image ? `url(${creativeContent.background_image})` : undefined;
+                  })(),
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center'
+                }}
+              >
                 <div className="absolute inset-0 bg-gradient-to-t from-white/80 via-transparent to-transparent"></div>
                 
                 <div className="absolute top-3 right-3">
@@ -186,11 +229,13 @@ const CreativeList: React.FC<CreativeListProps> = ({
                   </span>
                 </div>
                 
-                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-                  <div className="text-6xl opacity-20 filter grayscale">
-                    {categoryConfig?.icon || '💡'}
+                {!parseCreativeContent(creative.content || '{}').background_image && (
+                  <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+                    <div className="text-6xl opacity-20 filter grayscale">
+                      {categoryConfig?.icon || '💡'}
+                    </div>
                   </div>
-                </div>
+                )}
                 
                 <div className="absolute bottom-0 left-0 right-0 p-4">
                   <Heading as="h4" size="3" className="text-gray-800 font-semibold mb-1 line-clamp-1">

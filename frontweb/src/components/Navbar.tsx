@@ -81,8 +81,16 @@ const Navbar = () => {
             >
               {t('nav.points')}
             </Text>
-            <Text className="text-gray-400 hover:text-gray-200 cursor-pointer transition-colors">{t('nav.market')}</Text>
-            <Text className="text-gray-400 hover:text-gray-200 cursor-pointer transition-colors">{t('nav.assets')}</Text>
+            <Text 
+              className={`cursor-pointer transition-colors ${
+                isActive('/my-assets') 
+                  ? 'text-white border-b-2 border-blue-400 pb-1' 
+                  : 'text-gray-400 hover:text-gray-200'
+              }`}
+              onClick={() => navigate('/my-assets')}
+            >
+              我的资产
+            </Text>
           </Flex>
         </Flex>
         <Flex align="center" gap="3">

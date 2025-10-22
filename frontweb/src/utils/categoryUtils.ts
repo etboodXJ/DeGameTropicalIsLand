@@ -4,6 +4,7 @@ export interface Creative {
   id: string;
   title: string;
   description: string;
+  content?: string;
   category: string;
   tags: string[];
   creator: string;

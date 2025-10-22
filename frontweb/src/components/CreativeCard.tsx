@@ -2,6 +2,8 @@ import React from 'react';
 import { CATEGORY_DISPLAY, TAG_DISPLAY } from '../config/categories';
 import { CREATIVE_TYPES } from '../config/creativeTypes';
 import { Creative } from '../utils/categoryUtils';
+import { useCreativeLikes } from '../hooks/useCreativeLikes';
+import { parseCreativeContent } from '../utils/contentUtils';
 
 interface CreativeCardProps {
   creative: Creative;
@@ -10,6 +12,9 @@ interface CreativeCardProps {
 
 const CreativeCard: React.FC<CreativeCardProps> = ({ creative, onClick }) => {
   const categoryInfo = CATEGORY_DISPLAY[creative.category as keyof typeof CATEGORY_DISPLAY];
+  const { getCreativeExpectation } = useCreativeLikes();
+  const expectation = getCreativeExpectation(creative.id);
+  const creativeContent = parseCreativeContent(creative.content || '{}');
   
   // 调试信息
   console.log('CreativeCard data:', {
@@ -34,6 +39,20 @@ const CreativeCard: React.FC<CreativeCardProps> = ({ creative, onClick }) => {
       className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow cursor-pointer overflow-hidden relative z-[3001]"
       onClick={() => onClick(creative)}
     >
+      {/* 背景图片 */}
+      {creativeContent.background_image && (
+        <div className="h-48 overflow-hidden">
+          <img 
+            src={creativeContent.background_image} 
+            alt={creative.title}
+            className="w-full h-full object-cover"
+            onError={(e) => {
+              e.currentTarget.style.display = 'none';
+            }}
+          />
+        </div>
+      )}
+      
       {/* 头部 */}
       <div className="p-4 border-b border-gray-100">
         <div className="flex items-start justify-between">
@@ -105,10 +124,13 @@ const CreativeCard: React.FC<CreativeCardProps> = ({ creative, onClick }) => {
             </span>
             
             <span className="flex items-center">
-              <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd"/>
-              </svg>
-              {creative.total_expectation || 0}
+              <span className="mr-1">🌟</span>
+              {expectation.totalExpectation}
+            </span>
+            
+            <span className="flex items-center">
+              <span className="mr-1">👍</span>
+              {expectation.likeCount}
             </span>
           </div>
           

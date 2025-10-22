@@ -3,7 +3,7 @@ import { useCurrentAccount } from '@mysten/dapp-kit';
 
 interface PointsRecord {
   id: string;
-  platform: 'bucket' | 'cetus' | 'navi';
+  platform: 'bucket' | 'cetus' | 'navi' | 'spend';
   amount: number;
   points: number;
   timestamp: number;
@@ -66,9 +66,41 @@ export const usePoints = () => {
     localStorage.setItem(recordsKey, JSON.stringify(newRecords));
   };
 
+  const spendPoints = (amount: number, purpose: string): boolean => {
+    if (!currentAccount?.address || points < amount) {
+      return false;
+    }
+
+    const newPoints = points - amount;
+    setPoints(newPoints);
+
+    // 记录消费记录
+    const spendRecord: PointsRecord = {
+      id: Date.now().toString(),
+      platform: 'spend' as any,
+      amount: -amount,
+      points: -amount,
+      timestamp: Date.now(),
+      txHash: purpose
+    };
+
+    const newRecords = [spendRecord, ...records];
+    setRecords(newRecords);
+
+    // 保存到本地存储
+    const storageKey = `points_${currentAccount.address}`;
+    const recordsKey = `points_records_${currentAccount.address}`;
+    
+    localStorage.setItem(storageKey, newPoints.toString());
+    localStorage.setItem(recordsKey, JSON.stringify(newRecords));
+
+    return true;
+  };
+
   return {
     points,
     records,
-    addPoints
+    addPoints,
+    spendPoints
   };
 };

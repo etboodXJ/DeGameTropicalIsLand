@@ -7,6 +7,8 @@ import CreativeSubmitPage from "./pages/CreativeSubmitPage";
 import TestExplore from "./pages/TestExplore";
 import PointsPage from "./pages/PointsPage";
 import MyPointsPage from "./pages/MyPointsPage";
+import LikeTestPage from "./pages/LikeTestPage";
+import MyAssetsPage from "./pages/MyAssetsPage";
 import NetworkStatus from "./components/NetworkStatus";
 import NetworkSwitchNotification from "./components/NetworkSwitchNotification";
 import { LanguageProvider } from "./contexts/LanguageContext";
@@ -24,6 +26,8 @@ function App() {
             <Route path="/test" element={<TestExplore />} />
             <Route path="/points" element={<PointsPage />} />
             <Route path="/my-points" element={<MyPointsPage />} />
+            <Route path="/like-test" element={<LikeTestPage />} />
+            <Route path="/my-assets" element={<MyAssetsPage />} />
           </Routes>
           <NetworkStatus />
           <NetworkSwitchNotification />
