@@ -59,7 +59,7 @@ const Navbar = () => {
               }`}
               onClick={() => navigate('/explore')}
             >
-              创意分类
+              {t('nav.explore')}
             </Text>
             <Text 
               className={`cursor-pointer transition-colors ${
@@ -69,7 +69,7 @@ const Navbar = () => {
               }`}
               onClick={() => navigate('/submit')}
             >
-              创意提交
+              {t('nav.submit')}
             </Text>
             <Text 
               className={`cursor-pointer transition-colors ${
@@ -89,7 +89,7 @@ const Navbar = () => {
               }`}
               onClick={() => navigate('/my-assets')}
             >
-              我的资产
+              {t('nav.assets')}
             </Text>
           </Flex>
         </Flex>
