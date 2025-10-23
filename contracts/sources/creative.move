@@ -779,6 +779,36 @@ module dgti::creative {
         creative.status == STATUS_DELETED
     }
 
+    // 修改创意分类（项目成熟度）- 新增功能
+    public fun update_creative_category(
+        creative: &mut Creative,
+        new_category: String,
+        _ctx: &mut TxContext
+    ) {
+        // 验证创作者
+        assert!(creative.creator == tx_context::sender(_ctx), 1);
+        
+        // 验证创意状态（只有已发布或草稿状态可以修改分类）
+        assert!(creative.status == STATUS_PUBLISHED || creative.status == STATUS_DRAFT, 2);
+        
+        // 验证新分类是否有效
+        assert!(is_valid_category(&new_category), 3);
+        
+        // 更新分类
+        creative.category = new_category;
+        creative.updated_at = tx_context::epoch(_ctx);
+    }
+
+    // Entry函数：修改创意分类
+    #[allow(lint(public_entry))]
+    entry fun update_creative_category_entry(
+        creative: &mut Creative,
+        new_category: String,
+        _ctx: &mut TxContext
+    ) {
+        update_creative_category(creative, new_category, _ctx);
+    }
+
     // 获取共享对象中的创意数量
     public fun get_creative_count(shared: &SharedCreatives): u64 {
         vector::length(&shared.creatives)

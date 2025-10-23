@@ -1,17 +1,24 @@
 import React, { useState } from 'react';
-import { Box, Container, Heading, Text, Button, Flex } from '@radix-ui/themes';
+import { Box, Container, Heading, Text, Button, Flex, Dialog, Select } from '@radix-ui/themes';
 import { useNavigate } from 'react-router-dom';
-import { useCurrentAccount } from '@mysten/dapp-kit';
+import { useCurrentAccount, useSignAndExecuteTransaction } from '@mysten/dapp-kit';
+import { Transaction } from '@mysten/sui/transactions';
 import { useMyAssets } from '../hooks/useMyAssets';
-import { CATEGORY_DISPLAY } from '../config/categories';
+import { CATEGORY_DISPLAY, CATEGORIES } from '../config/categories';
+import { useNetworkAwareConfig } from '../hooks/useNetworkAwareConfig';
 import Navbar from '../components/Navbar';
 import ProfitChart from '../components/ProfitChart';
 
 const MyAssetsPage = () => {
   const navigate = useNavigate();
   const currentAccount = useCurrentAccount();
+  const { mutate: signAndExecute } = useSignAndExecuteTransaction();
+  const { packageId } = useNetworkAwareConfig();
   const { myCreatives, profitReport, futureProfitProjection, loading, refreshAssets } = useMyAssets();
   const [activeTab, setActiveTab] = useState<'overview' | 'creatives' | 'profit' | 'projection'>('overview');
+  const [updatingCategory, setUpdatingCategory] = useState(false);
+  const [selectedCreative, setSelectedCreative] = useState<any>(null);
+  const [newCategory, setNewCategory] = useState('');
 
   if (!currentAccount) {
     return (
@@ -33,6 +40,54 @@ const MyAssetsPage = () => {
 
   const formatDate = (timestamp: number) => {
     return new Date(timestamp).toLocaleDateString('zh-CN');
+  };
+
+  const handleUpdateCategory = async () => {
+    if (!selectedCreative || !newCategory || !packageId) {
+      return;
+    }
+
+    setUpdatingCategory(true);
+    try {
+      const tx = new Transaction();
+      
+      // 调用智能合约的修改分类函数
+      tx.moveCall({
+        target: `${packageId}::creative::update_creative_category_entry`,
+        arguments: [
+          tx.object(selectedCreative.id),
+          tx.pure.string(newCategory),
+        ],
+      });
+
+      const result = await signAndExecute({ transaction: tx });
+      
+      console.log('项目成熟度更新成功:', result);
+      alert('项目成熟度更新成功！');
+      
+      // 刷新数据
+      await refreshAssets();
+      
+      // 关闭对话框
+      setSelectedCreative(null);
+      setNewCategory('');
+      
+    } catch (error) {
+      console.error('更新项目成熟度失败:', error);
+      alert(`更新项目成熟度失败: ${error instanceof Error ? error.message : '请重试'}`);
+    } finally {
+      setUpdatingCategory(false);
+    }
+  };
+
+  const openCategoryDialog = (creative: any) => {
+    setSelectedCreative(creative);
+    setNewCategory(creative.category);
+  };
+
+  const closeCategoryDialog = () => {
+    setSelectedCreative(null);
+    setNewCategory('');
   };
 
   return (
@@ -121,7 +176,7 @@ const MyAssetsPage = () => {
               myCreatives.map(creative => {
                 const categoryInfo = CATEGORY_DISPLAY[creative.category as keyof typeof CATEGORY_DISPLAY];
                 return (
-                  <Box key={creative.id} className="glass rounded-2xl p-6">
+                  <Box key={creative.id} className="glass rounded-2xl p-6 relative" style={{ zIndex: 1 }}>
                     <Flex justify="between" align="start" className="mb-4">
                       <Box className="flex-1">
                         <Heading as="h3" size="4" className="text-black mb-2">
@@ -131,16 +186,26 @@ const MyAssetsPage = () => {
                           {creative.description}
                         </Text>
                         <Flex gap="4" className="text-sm text-gray-700">
-                          <span>分类: {categoryInfo?.name || creative.category}</span>
-                          <span>发布: {formatDate(creative.createdAt)}</span>
+                          <span>成熟度: {categoryInfo?.name || creative.category}</span>
+                          <span>发布时间: {formatDate(creative.createdAt)}</span>
                         </Flex>
                       </Box>
-                      <Button
-                        className="bg-gray-700 hover:bg-gray-600 text-white"
-                        onClick={() => navigate(`/creative/${creative.id}`)}
-                      >
-                        查看详情
-                      </Button>
+                      <Flex gap="2" className="relative z-10">
+                        <Button
+                          className="bg-blue-500 hover:bg-blue-600 text-white relative z-20 cursor-pointer"
+                          onClick={() => openCategoryDialog(creative)}
+                          style={{ pointerEvents: 'auto' }}
+                        >
+                          修改成熟度
+                        </Button>
+                        <Button
+                          className="bg-gray-700 hover:bg-gray-600 text-white relative z-20 cursor-pointer"
+                          onClick={() => navigate(`/creative/${creative.id}`)}
+                          style={{ pointerEvents: 'auto' }}
+                        >
+                          查看详情
+                        </Button>
+                      </Flex>
                     </Flex>
                     
                     <Box className="grid grid-cols-3 gap-4 pt-4 border-t border-gray-600">
@@ -293,6 +358,68 @@ const MyAssetsPage = () => {
             </Box>
           </Box>
         )}
+
+        {/* 修改项目成熟度对话框 */}
+        <Dialog.Root open={selectedCreative !== null} onOpenChange={(open) => !open && closeCategoryDialog()}>
+          <Dialog.Content className="max-w-md mx-auto" style={{ backgroundColor: '#1a1a1a', border: '1px solid #333' }}>
+            <Dialog.Title className="text-white mb-4">修改项目成熟度</Dialog.Title>
+            
+            {selectedCreative && (
+              <Box className="space-y-4">
+                <Box>
+                  <Text size="2" className="text-gray-400 mb-2">创意标题</Text>
+                  <Text size="3" className="text-white font-medium">{selectedCreative.title}</Text>
+                </Box>
+                
+                <Box>
+                  <Text size="2" className="text-gray-400 mb-2">当前成熟度</Text>
+                  <Text size="3" className="text-white">
+                    {CATEGORY_DISPLAY[selectedCreative.category as keyof typeof CATEGORY_DISPLAY]?.name || selectedCreative.category}
+                  </Text>
+                </Box>
+                
+                <Box>
+                  <Text size="2" className="text-gray-400 mb-2">选择新的成熟度</Text>
+                  <Select.Root value={newCategory} onValueChange={setNewCategory}>
+                    <Select.Trigger 
+                      className="w-full p-3 rounded-lg border border-gray-600 bg-gray-800 text-white"
+                      style={{ position: 'relative', zIndex: 3001 }}
+                    />
+                    <Select.Content style={{ backgroundColor: '#2a2a2a', border: '1px solid #444' }}>
+                      {Object.entries(CATEGORY_DISPLAY).map(([key, config]) => (
+                        <Select.Item key={key} value={key}>
+                          <div className="flex items-center gap-2">
+                            <span>{config.icon}</span>
+                            <span>{config.name}</span>
+                            <span className="text-gray-400 text-sm">- {config.description}</span>
+                          </div>
+                        </Select.Item>
+                      ))}
+                    </Select.Content>
+                  </Select.Root>
+                </Box>
+                
+                <Flex gap="3" justify="end" className="pt-4">
+                  <Button
+                    variant="soft"
+                    onClick={closeCategoryDialog}
+                    disabled={updatingCategory}
+                    className="bg-gray-600 hover:bg-gray-700 text-white"
+                  >
+                    取消
+                  </Button>
+                  <Button
+                    onClick={handleUpdateCategory}
+                    disabled={updatingCategory || newCategory === selectedCreative.category}
+                    className="bg-blue-500 hover:bg-blue-600 text-white disabled:opacity-50"
+                  >
+                    {updatingCategory ? '更新中...' : '确认修改'}
+                  </Button>
+                </Flex>
+              </Box>
+            )}
+          </Dialog.Content>
+        </Dialog.Root>
       </Container>
     </Box>
   );
