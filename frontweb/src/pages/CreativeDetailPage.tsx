@@ -29,6 +29,8 @@ const CreativeDetailPage = () => {
   const [bgImageUrl, setBgImageUrl] = useState('');
   const [isEditingDesc, setIsEditingDesc] = useState(false);
   const [editedDescription, setEditedDescription] = useState('');
+  const [isEditingDetailedDesc, setIsEditingDetailedDesc] = useState(false);
+  const [editedDetailedDescription, setEditedDetailedDescription] = useState('');
 
   // 获取创意详情
   useEffect(() => {
@@ -412,8 +414,109 @@ const CreativeDetailPage = () => {
                   </Text>
                 </div>
               )}
-              
 
+              {/* 详细描述部分 */}
+              <div className="mb-6">
+                <Flex justify="between" align="center" className="mb-4">
+                  <Heading as="h3" size="4" className="text-black">详细描述</Heading>
+                  {isCreator && (
+                    <button
+                      onClick={() => {
+                        setIsEditingDetailedDesc(true);
+                        // 从content中获取详细描述，如果没有则使用默认值
+                        const detailedDesc = creativeContent?.detailed_description || '';
+                        setEditedDetailedDescription(detailedDesc);
+                      }}
+                      className="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded-lg transition-colors"
+                    >
+                      ✏️ 编辑详细描述
+                    </button>
+                  )}
+                </Flex>
+                
+                {isEditingDetailedDesc && isCreator ? (
+                  <div className="mb-6">
+                    <textarea
+                      value={editedDetailedDescription}
+                      onChange={(e) => setEditedDetailedDescription(e.target.value)}
+                      className="w-full p-3 rounded-lg border border-gray-300 bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                      rows={8}
+                      placeholder="请输入详细描述，可以包含更多技术细节、设计理念、实现方案等..."
+                    />
+                    <div className="flex gap-2 mt-2">
+                      <button
+                        onClick={async () => {
+                          if (!packageId || !currentAccount) {
+                            alert('合约未部署或未连接钱包');
+                            return;
+                          }
+
+                          try {
+                            // 更新content中的详细描述
+                            const currentContent = creativeContent || {};
+                            const updatedContent = {
+                              ...currentContent,
+                              detailed_description: editedDetailedDescription
+                            };
+                            
+                            // 调用合约更新content字段
+                            const tx = new Transaction();
+                            tx.moveCall({
+                              target: `${packageId}::creative::update_creative`,
+                              arguments: [
+                                tx.object(creative.id),
+                                tx.pure.option('string', null), // title
+                                tx.pure.option('string', null), // description
+                                tx.pure.option('string', JSON.stringify(updatedContent)), // content
+                                tx.pure.option('string', null), // category
+                                tx.pure.option('vector<string>', null), // tags
+                              ],
+                            });
+
+                            await signAndExecute({ transaction: tx });
+                            
+                            // 更新本地状态
+                            setCreative({
+                              ...creative,
+                              content: JSON.stringify(updatedContent)
+                            });
+                            
+                            setIsEditingDetailedDesc(false);
+                            alert('详细描述更新成功！');
+                          } catch (err) {
+                            console.error('更新详细描述失败:', err);
+                            alert('更新详细描述失败，请重试');
+                          }
+                        }}
+                        className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white text-sm rounded-lg transition-colors"
+                      >
+                        保存
+                      </button>
+                      <button
+                        onClick={() => {
+                          setIsEditingDetailedDesc(false);
+                          setEditedDetailedDescription('');
+                        }}
+                        className="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white text-sm rounded-lg transition-colors"
+                      >
+                        取消
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="mb-6">
+                    {creativeContent?.detailed_description ? (
+                      <Text size="3" className="text-gray-800 leading-relaxed whitespace-pre-wrap">
+                        {creativeContent.detailed_description}
+                      </Text>
+                    ) : (
+                      <Text size="3" className="text-gray-500 italic">
+                        暂无详细描述
+                      </Text>
+                    )}
+                  </div>
+                )}
+              </div>
 
               <Heading as="h3" size="4" className="text-black mb-4">标签</Heading>
               <Flex wrap="wrap" gap="2" className="mb-6">

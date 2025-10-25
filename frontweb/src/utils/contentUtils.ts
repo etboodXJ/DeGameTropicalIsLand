@@ -4,6 +4,7 @@ export interface CreativeContent {
   background_image?: string;
   media?: string[];
   thumbnail?: string;
+  detailed_description?: string;
 }
 
 // 解析创意内容
