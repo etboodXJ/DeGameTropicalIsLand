@@ -1,6 +1,6 @@
 // 模块: creative
 // 创意管理系统模块 - 管理创意提交、实例和期待值
-#[allow(unused_use,duplicate_alias,lint(public_entry))]
+#[allow(unused_use, duplicate_alias,lint(public_entry))]
 module dgti::creative;
 
 use dgti::points::{Self, PointsBalance};
