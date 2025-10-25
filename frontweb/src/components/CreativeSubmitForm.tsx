@@ -37,7 +37,7 @@ const CreativeSubmitForm: React.FC<CreativeSubmitFormProps> = ({
 
   const currentAccount = useCurrentAccount();
   const { mutate: signAndExecute } = useSignAndExecuteTransaction();
-  const { packageId } = useNetworkAwareConfig();
+  const { packageId, sharedCreativesId } = useNetworkAwareConfig();
 
   // 创意类型映射
   const creativeTypes = [
@@ -106,6 +106,11 @@ const CreativeSubmitForm: React.FC<CreativeSubmitFormProps> = ({
       return;
     }
 
+    if (!sharedCreativesId) {
+      alert('共享创意对象未初始化，请先初始化合约');
+      return;
+    }
+
     // 表单验证
     if (!formData.title.trim()) {
       alert('请输入创意标题');
@@ -134,7 +139,8 @@ const CreativeSubmitForm: React.FC<CreativeSubmitFormProps> = ({
           tx.pure.u8(formData.creativeType),
           tx.pure.string(formData.category),
           tx.pure.vector('string', formData.tags),
-          tx.object('0x6'),
+          tx.object('0x6'), // Clock object
+          tx.object(sharedCreativesId), // SharedCreatives object
         ],
       });
 
