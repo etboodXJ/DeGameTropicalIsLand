@@ -627,6 +627,7 @@ public entry fun submit_creative_to_shared(
     category: String,
     tags: vector<String>,
     clock: &Clock,
+    shared: &mut SharedCreatives,
     ctx: &mut TxContext,
 ) {
     let sender = ctx.sender();
@@ -694,7 +695,10 @@ public entry fun submit_creative_to_shared(
         list: vector::empty<address>(), // 初始化为空向量
     };
 
-    // 将创意添加到共享对象
+    // 将创意ID添加到共享对象
+    add_creative_to_shared(shared, cid, ctx);
+
+    // 共享创意对象
     transfer::share_object(creative);
 
     // 发送创意提交事件

@@ -108,7 +108,7 @@ const HomePage = () => {
             <Text size="3" className="text-gray-600">发现精彩创意，探索无限可能</Text>
           </Box>
           
-          <CreativeList key={refreshKey} limit={8} showFilters={false} />
+          <CreativeList key={refreshKey} limit={20} showFilters={false} />
           
           {/* 查看更多按钮 */}
           <Box className="text-center mt-8">
