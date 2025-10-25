@@ -15,7 +15,8 @@ export const parseCreativeContent = (content: string): CreativeContent => {
       text: parsed.text || content, // 兼容旧格式
       background_image: parsed.background_image || '',
       media: parsed.media || [],
-      thumbnail: parsed.thumbnail || ''
+      thumbnail: parsed.thumbnail || '',
+      detailed_description: parsed.detailed_description || ''
     };
   } catch {
     // 如果不是JSON格式，当作纯文本处理
@@ -23,7 +24,8 @@ export const parseCreativeContent = (content: string): CreativeContent => {
       text: content,
       background_image: '',
       media: [],
-      thumbnail: ''
+      thumbnail: '',
+      detailed_description: ''
     };
   }
 };

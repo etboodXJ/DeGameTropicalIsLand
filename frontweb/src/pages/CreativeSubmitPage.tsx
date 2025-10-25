@@ -34,7 +34,7 @@ const CreativeSubmitPage: React.FC = () => {
   const navigate = useNavigate();
   const currentAccount = useCurrentAccount();
   const { mutate: signAndExecute } = useSignAndExecuteTransaction();
-  const { packageId } = useNetworkAwareConfig();
+  const { packageId, sharedCreativesId } = useNetworkAwareConfig();
 
   // 创意类型映射
   const creativeTypes = [
@@ -103,6 +103,11 @@ const CreativeSubmitPage: React.FC = () => {
       return;
     }
 
+    if (!sharedCreativesId || sharedCreativesId === '0x0') {
+      alert('共享创意对象未配置，请先创建共享创意对象');
+      return;
+    }
+
     // 表单验证
     if (!formData.title.trim()) {
       alert('请输入创意标题');
@@ -126,7 +131,8 @@ const CreativeSubmitPage: React.FC = () => {
         text: formData.content || formData.description,
         background_image: formData.backgroundImage,
         media: [],
-        thumbnail: ''
+        thumbnail: '',
+        detailed_description: formData.content || ''
       });
 
       // 调用智能合约的 submit_creative_to_shared 函数
@@ -140,13 +146,14 @@ const CreativeSubmitPage: React.FC = () => {
           tx.pure.string(formData.category),
           tx.pure.vector('string', formData.tags),
           tx.object('0x6'),
+          tx.object(sharedCreativesId),
         ],
       });
 
       const result = await signAndExecute({ transaction: tx });
       
-      console.log('创意提交成功:', result);
-      alert('创意提交成功！等待审核。');
+      console.log('本地创意提交成功:', result);
+      alert('本地创意提交成功！等待审核。');
       
       // 提交成功后跳转到首页
       navigate('/');

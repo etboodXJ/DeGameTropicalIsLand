@@ -54,7 +54,8 @@ const CreativeDetailPage = () => {
             createdAt: Date.now(),
             content: JSON.stringify({
               text: '这是一个使用AI技术生成的游戏角色设计，包含完整的动画序列和技能效果。',
-              background_image: 'https://images.unsplash.com/photo-1518709268805-4e9042af2176?w=800&h=600&fit=crop'
+              background_image: 'https://images.unsplash.com/photo-1518709268805-4e9042af2176?w=800&h=600&fit=crop',
+              detailed_description: '## 技术实现细节\n\n### AI模型选择\n- 使用Stable Diffusion XL作为主要生成模型\n- 结合ControlNet进行姿态控制\n- 使用LoRA微调模型以适应特定艺术风格\n\n### 动画制作流程\n1. **角色建模**: 使用Blender进行3D建模，确保多边形数量适中\n2. **骨骼绑定**: 采用Advanced Skeleton插件进行自动骨骼绑定\n3. **动画制作**: 使用Mixamo动作库作为基础，手动调整关键帧\n4. **特效制作**: 使用After Effects制作技能特效\n\n### 技能系统设计\n- **主动技能**: 火焰冲击、冰霜护盾、雷电链\n- **被动技能**: 元素亲和、伤害减免、生命恢复\n- **终极技能**: 元素爆发，造成范围伤害并施加元素效果\n\n### 性能优化\n- 使用LOD系统，根据距离调整模型精度\n- 实现遮挡剔除，减少不必要的渲染\n- 采用对象池技术管理特效实例'
             })
           },
           'test-creative-2': {
@@ -67,7 +68,8 @@ const CreativeDetailPage = () => {
             createdAt: Date.now(),
             content: JSON.stringify({
               text: '一个基于区块链的策略游戏概念，玩家可以真正拥有游戏内资产。',
-              background_image: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?w=800&h=600&fit=crop'
+              background_image: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?w=800&h=600&fit=crop',
+              detailed_description: '## 游戏核心机制\n\n### 区块链集成\n- **智能合约**: 使用Solidity开发，部署在以太坊主网\n- **NFT标准**: 遵循ERC-721标准，确保资产唯一性和可交易性\n- **代币经济**: 采用ERC-20代币作为游戏内货币\n\n### 游戏玩法\n1. **资源管理**: 玩家需要管理土地、建筑、军队等资源\n2. **战略决策**: 通过投票机制影响游戏世界发展\n3. **PvP战斗**: 实时策略战斗，胜利者获得奖励\n4. **联盟系统**: 玩家可以组建联盟，共同发展\n\n### 经济模型\n- **土地拍卖**: 初始土地通过拍卖方式分配\n- **税收系统**: 联盟可以对辖区内的交易征税\n- **奖励机制**: 参与游戏治理和战斗获得代币奖励\n\n### 技术架构\n- **前端**: 使用React + WebGL开发\n- **后端**: Node.js + GraphQL API\n- **区块链**: 以太坊 + Layer2解决方案\n- **存储**: IPFS分布式存储游戏资产'
             })
           }
         };
@@ -368,7 +370,7 @@ const CreativeDetailPage = () => {
                         try {
                           const tx = new Transaction();
                           tx.moveCall({
-                            target: `${packageId}::creative::update_creative`,
+                            target: `${packageId}::creative::update_creative_entry`,
                             arguments: [
                               tx.object(creative.id),
                               tx.pure.option('string', null), // title
@@ -462,7 +464,7 @@ const CreativeDetailPage = () => {
                             // 调用合约更新content字段
                             const tx = new Transaction();
                             tx.moveCall({
-                              target: `${packageId}::creative::update_creative`,
+                              target: `${packageId}::creative::update_creative_entry`,
                               arguments: [
                                 tx.object(creative.id),
                                 tx.pure.option('string', null), // title

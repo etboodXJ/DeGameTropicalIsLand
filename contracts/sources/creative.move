@@ -1,5 +1,6 @@
 // 模块: creative
 // 创意管理系统模块 - 管理创意提交、实例和期待值
+#[allow(unused_use,duplicate_alias,lint(public_entry))]
 module dgti::creative;
 
 use dgti::points::{Self, PointsBalance};
@@ -295,8 +296,8 @@ public fun update_creative(
     // 验证创作者
     assert!(creative.creator == ctx.sender(), 1);
 
-    // 验证状态 (只有草稿状态可以更新)
-    assert!(creative.status == STATUS_DRAFT, 2);
+    // 验证状态 (草稿、已发布状态都可以更新，但不能是已删除状态)
+    assert!(creative.status == STATUS_DRAFT || creative.status == STATUS_PUBLISHED, 2);
 
     // 更新字段
     if (option::is_some(&title)) {
@@ -320,6 +321,19 @@ public fun update_creative(
     };
 
     creative.updated_at = ctx.epoch();
+}
+
+// Entry函数：更新创意信息
+public entry fun update_creative_entry(
+    creative: &mut Creative,
+    title: Option<String>,
+    description: Option<String>,
+    content: Option<String>,
+    category: Option<String>,
+    tags: Option<vector<String>>,
+    ctx: &mut TxContext,
+) {
+    update_creative(creative, title, description, content, category, tags, ctx);
 }
 
 // 审核创意 (管理员功能)
