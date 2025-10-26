@@ -14,6 +14,7 @@ use sui::transfer;
 use sui::tx_context::TxContext;
 use sui::vec_map::{Self, VecMap};
 
+
 // 创意状态常量
 const STATUS_DRAFT: u8 = 0; // 草稿
 const STATUS_SUBMITTED: u8 = 1; // 已提交

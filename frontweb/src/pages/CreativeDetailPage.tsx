@@ -373,11 +373,11 @@ const CreativeDetailPage = () => {
                             target: `${packageId}::creative::update_creative_entry`,
                             arguments: [
                               tx.object(creative.id),
-                              tx.pure.option('string', null), // title
+                              tx.pure.option('string', undefined), // title
                               tx.pure.option('string', editedDescription), // description
-                              tx.pure.option('string', null), // content
-                              tx.pure.option('string', null), // category
-                              tx.pure.option('vector<string>', null), // tags
+                              tx.pure.option('string', undefined), // content
+                              tx.pure.option('string', undefined), // category
+                              tx.pure.option('vector<string>', undefined), // tags
                             ],
                           });
 
@@ -467,11 +467,11 @@ const CreativeDetailPage = () => {
                               target: `${packageId}::creative::update_creative_entry`,
                               arguments: [
                                 tx.object(creative.id),
-                                tx.pure.option('string', null), // title
-                                tx.pure.option('string', null), // description
+                                tx.pure.option('string', undefined), // title
+                                tx.pure.option('string', undefined), // description
                                 tx.pure.option('string', JSON.stringify(updatedContent)), // content
-                                tx.pure.option('string', null), // category
-                                tx.pure.option('vector<string>', null), // tags
+                                tx.pure.option('string', undefined), // category
+                                tx.pure.option('vector<string>', undefined), // tags
                               ],
                             });
 

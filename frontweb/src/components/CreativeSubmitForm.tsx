@@ -139,8 +139,16 @@ const CreativeSubmitForm: React.FC<CreativeSubmitFormProps> = ({
           tx.pure.u8(formData.creativeType),
           tx.pure.string(formData.category),
           tx.pure.vector('string', formData.tags),
-          tx.object('0x6'), // Clock object
-          tx.object(sharedCreativesId), // SharedCreatives object
+          tx.sharedObjectRef({
+            objectId: '0x6',
+            mutable: true,
+            initialSharedVersion: 1
+          }), // Clock object - 使用 sharedObjectRef
+          tx.sharedObjectRef({
+            objectId: sharedCreativesId,
+            mutable: true,
+            initialSharedVersion: 1 // 通常从1开始，或者需要查询实际版本
+          }), // SharedCreatives object - 使用 sharedObjectRef
         ],
       });
 
