@@ -337,7 +337,7 @@ const CreativeDetailPage = () => {
 
         {/* 作品详情 */}
         <Box className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
-          {/* 左侧详情 */}
+          {/* 创意介绍 */}
           <Box className="lg:col-span-2">
             <Box className="glass rounded-2xl p-8">
               <Flex justify="between" align="center" className="mb-6">
@@ -387,39 +387,45 @@ const CreativeDetailPage = () => {
                           });
 
                           await signAndExecute({ transaction: tx });
+
+                          // 更新本地状态，避免重新获取数据带来的延迟
+                          setCreative({
+                            ...creative,
+                            description: editedDescription
+                          });
                           
                           // 重新获取最新的链上数据
-                          try {
-                            const updatedObject = await suiClient.getObject({
-                              id: creative.id,
-                              options: {
-                                showContent: true,
-                                showType: true
-                              }
-                            });
+                          // try {
+                          //   const updatedObject = await suiClient.getObject({
+                          //     id: creative.id,
+                          //     options: {
+                          //       showContent: true,
+                          //       showType: true
+                          //     }
+                          //   });
 
-                            if (updatedObject.data?.content && 'fields' in updatedObject.data.content) {
-                              const fields = updatedObject.data.content.fields as any;
-                              setCreative({
-                                ...creative,
-                                description: fields.description || editedDescription,
-                                content: fields.content || creative.content
-                              });
-                            } else {
-                              // 如果获取失败，使用本地更新的值
-                              setCreative({
-                                ...creative,
-                                description: editedDescription
-                              });
-                            }
-                          } catch (fetchError) {
-                            console.error('重新获取数据失败:', fetchError);
-                            // 如果重新获取失败，使用本地更新的值
-                            setCreative({
-                              ...creative,
-                              description: editedDescription
-                            });
-                          }
+                          //   if (updatedObject.data?.content && 'fields' in updatedObject.data.content) {
+                          //     const fields = updatedObject.data.content.fields as any;
+                          //     setCreative({
+                          //       ...creative,
+                          //       description: fields.description || editedDescription,
+                          //       content: fields.content || creative.content
+                          //     });
+                          //   } else {
+                          //     // 如果获取失败，使用本地更新的值
+                          //     setCreative({
+                          //       ...creative,
+                          //       description: editedDescription
+                          //     });
+                          //   }
+                          // } catch (fetchError) {
+                          //   console.error('重新获取数据失败:', fetchError);
+                          //   // 如果重新获取失败，使用本地更新的值
+                          //   setCreative({
+                          //     ...creative,
+                          //     description: editedDescription
+                          //   });
+                          // }
                           
                           setIsEditingDesc(false);
                           alert('描述更新成功！');
@@ -511,38 +517,41 @@ const CreativeDetailPage = () => {
                             });
 
                             await signAndExecute({ transaction: tx });
-                            
+                            setCreative({
+                            ...creative,
+                            content: JSON.stringify(updatedContent)
+                            });
                             // 重新获取最新的链上数据
-                            try {
-                              const updatedObject = await suiClient.getObject({
-                                id: creative.id,
-                                options: {
-                                  showContent: true,
-                                  showType: true
-                                }
-                              });
+                            // try {
+                            //   const updatedObject = await suiClient.getObject({
+                            //     id: creative.id,
+                            //     options: {
+                            //       showContent: true,
+                            //       showType: true
+                            //     }
+                            //   });
 
-                              if (updatedObject.data?.content && 'fields' in updatedObject.data.content) {
-                                const fields = updatedObject.data.content.fields as any;
-                                setCreative({
-                                  ...creative,
-                                  content: fields.content || JSON.stringify(updatedContent)
-                                });
-                              } else {
-                                // 如果获取失败，使用本地更新的值
-                                setCreative({
-                                  ...creative,
-                                  content: JSON.stringify(updatedContent)
-                                });
-                              }
-                            } catch (fetchError) {
-                              console.error('重新获取数据失败:', fetchError);
-                              // 如果重新获取失败，使用本地更新的值
-                              setCreative({
-                                ...creative,
-                                content: JSON.stringify(updatedContent)
-                              });
-                            }
+                            //   if (updatedObject.data?.content && 'fields' in updatedObject.data.content) {
+                            //     const fields = updatedObject.data.content.fields as any;
+                            //     setCreative({
+                            //       ...creative,
+                            //       content: fields.content || JSON.stringify(updatedContent)
+                            //     });
+                            //   } else {
+                            //     // 如果获取失败，使用本地更新的值
+                            //     setCreative({
+                            //       ...creative,
+                            //       content: JSON.stringify(updatedContent)
+                            //     });
+                            //   }
+                            // } catch (fetchError) {
+                            //   console.error('重新获取数据失败:', fetchError);
+                            //   // 如果重新获取失败，使用本地更新的值
+                            //   setCreative({
+                            //     ...creative,
+                            //     content: JSON.stringify(updatedContent)
+                            //   });
+                            // }
                             
                             setIsEditingDetailedDesc(false);
                             alert('详细描述更新成功！');
