@@ -113,6 +113,7 @@ const CreativeDetailPage = () => {
           
           try {
             // 获取完整的创意对象信息
+            // console.log('Creative id ', data.creative_id);
             const creativeObject = await suiClient.getObject({
               id: data.creative_id,
               options: {
@@ -122,15 +123,19 @@ const CreativeDetailPage = () => {
             });
 
             let content = '';
+            let desc = "";
             if (creativeObject.data?.content && 'fields' in creativeObject.data.content) {
               const fields = creativeObject.data.content.fields as any;
               content = fields.content || '';
+              desc = fields.description || '';
+
             }
-            
+            // //详细信息
+            // console.log('Creative desc :', desc);
             setCreative({
               id: data.creative_id,
               title: data.title,
-              description: data.description,
+              description: desc,
               content: content,
               category: data.category,
               tags: data.tags || [],
@@ -383,10 +388,39 @@ const CreativeDetailPage = () => {
 
                           await signAndExecute({ transaction: tx });
                           
-                          setCreative({
-                            ...creative,
-                            description: editedDescription
-                          });
+                          // 重新获取最新的链上数据
+                          try {
+                            const updatedObject = await suiClient.getObject({
+                              id: creative.id,
+                              options: {
+                                showContent: true,
+                                showType: true
+                              }
+                            });
+
+                            if (updatedObject.data?.content && 'fields' in updatedObject.data.content) {
+                              const fields = updatedObject.data.content.fields as any;
+                              setCreative({
+                                ...creative,
+                                description: fields.description || editedDescription,
+                                content: fields.content || creative.content
+                              });
+                            } else {
+                              // 如果获取失败，使用本地更新的值
+                              setCreative({
+                                ...creative,
+                                description: editedDescription
+                              });
+                            }
+                          } catch (fetchError) {
+                            console.error('重新获取数据失败:', fetchError);
+                            // 如果重新获取失败，使用本地更新的值
+                            setCreative({
+                              ...creative,
+                              description: editedDescription
+                            });
+                          }
+                          
                           setIsEditingDesc(false);
                           alert('描述更新成功！');
                         } catch (err) {
@@ -411,6 +445,7 @@ const CreativeDetailPage = () => {
                 </div>
               ) : (
                 <div className="mb-6">
+                  {/* 使用原生 div 来确保换行符正确显示 */}
                   <Text size="3" className="text-gray-800 leading-relaxed whitespace-pre-wrap">
                     {creative.description}
                   </Text>
@@ -477,11 +512,37 @@ const CreativeDetailPage = () => {
 
                             await signAndExecute({ transaction: tx });
                             
-                            // 更新本地状态
-                            setCreative({
-                              ...creative,
-                              content: JSON.stringify(updatedContent)
-                            });
+                            // 重新获取最新的链上数据
+                            try {
+                              const updatedObject = await suiClient.getObject({
+                                id: creative.id,
+                                options: {
+                                  showContent: true,
+                                  showType: true
+                                }
+                              });
+
+                              if (updatedObject.data?.content && 'fields' in updatedObject.data.content) {
+                                const fields = updatedObject.data.content.fields as any;
+                                setCreative({
+                                  ...creative,
+                                  content: fields.content || JSON.stringify(updatedContent)
+                                });
+                              } else {
+                                // 如果获取失败，使用本地更新的值
+                                setCreative({
+                                  ...creative,
+                                  content: JSON.stringify(updatedContent)
+                                });
+                              }
+                            } catch (fetchError) {
+                              console.error('重新获取数据失败:', fetchError);
+                              // 如果重新获取失败，使用本地更新的值
+                              setCreative({
+                                ...creative,
+                                content: JSON.stringify(updatedContent)
+                              });
+                            }
                             
                             setIsEditingDetailedDesc(false);
                             alert('详细描述更新成功！');
@@ -508,9 +569,9 @@ const CreativeDetailPage = () => {
                 ) : (
                   <div className="mb-6">
                     {creativeContent?.detailed_description ? (
-                      <Text size="3" className="text-gray-800 leading-relaxed whitespace-pre-wrap">
+                      <div className="text-gray-800 leading-relaxed whitespace-pre-wrap text-base">
                         {creativeContent.detailed_description}
-                      </Text>
+                      </div>
                     ) : (
                       <Text size="3" className="text-gray-500 italic">
                         暂无详细描述
