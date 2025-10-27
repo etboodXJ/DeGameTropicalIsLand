@@ -75,16 +75,18 @@ const CreativeList: React.FC<CreativeListProps> = ({
             });
 
             let content = '';
+            let description = '';
             if (creativeObject.data?.content && 'fields' in creativeObject.data.content) {
               const fields = creativeObject.data.content.fields as any;
               content = fields.content || '';
+              description = fields.description || '';
             }
             
             creativesData.push({
               id: data.creative_id,
               creator: data.creator,
               title: data.title,
-              description: data.description,
+              description: description,
               content: content,
               category: data.category,
               tags: data.tags || [],
