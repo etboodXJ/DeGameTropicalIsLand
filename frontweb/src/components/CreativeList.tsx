@@ -76,19 +76,21 @@ const CreativeList: React.FC<CreativeListProps> = ({
 
             let content = '';
             let description = '';
+            let title = '';
             if (creativeObject.data?.content && 'fields' in creativeObject.data.content) {
               const fields = creativeObject.data.content.fields as any;
               content = fields.content || '';
               description = fields.description || '';
+              title = fields.title || '';
             }
             
             creativesData.push({
               id: data.creative_id,
               creator: data.creator,
-              title: data.title,
+              title: title,
               description: description,
               content: content,
-              category: data.category,
+              category: data.category, 
               tags: data.tags || [],
               createdAt: parseInt(data.created_at),
               status: 1,
@@ -243,9 +245,9 @@ const CreativeList: React.FC<CreativeListProps> = ({
                   <Heading as="h4" size="3" className="text-gray-800 font-semibold mb-1 line-clamp-1">
                     {creative.title}
                   </Heading>
-                  <Text size="2" className="text-gray-600 line-clamp-2">
+                  {/* <Text size="2" className="text-gray-600 line-clamp-2">
                     {creative.description}
-                  </Text>
+                  </Text> */}
                 </div>
               </div>
               

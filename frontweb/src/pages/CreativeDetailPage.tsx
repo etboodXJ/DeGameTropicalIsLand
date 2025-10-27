@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Container, Heading, Text, Button, Badge, Flex } from '@radix-ui/themes';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useSuiClient, useCurrentAccount, useSignAndExecuteTransaction } from '@mysten/dapp-kit';
+import { useSuiClient, useCurrentAccount, useSignAndExecuteTransaction} from '@mysten/dapp-kit';
 import { Transaction } from '@mysten/sui/transactions';
 import { useNetworkAwareConfig } from '../hooks/useNetworkAwareConfig';
 import { usePoints } from '../hooks/usePoints';
 import { useCreativeLikes } from '../hooks/useCreativeLikes';
 import { CATEGORY_DISPLAY, TAG_DISPLAY } from '../config/categories';
 import { parseCreativeContent, updateBackgroundImage } from '../utils/contentUtils';
+import { parseTransactionResult, hasEventType, isObjectChanged } from '../utils/transactionUtils';
 import Navbar from '../components/Navbar';
 
 const CreativeDetailPage = () => {
@@ -15,11 +16,21 @@ const CreativeDetailPage = () => {
   const { id } = useParams();
   const suiClient = useSuiClient();
   const currentAccount = useCurrentAccount();
-  const { mutate: signAndExecute } = useSignAndExecuteTransaction();
+  const { mutate: signAndExecute } = useSignAndExecuteTransaction({
+		execute: async ({ bytes, signature }) =>
+			await suiClient.executeTransactionBlock({
+				transactionBlock: bytes,
+				signature,
+				options: {
+					showRawEffects: true,
+          showRawInput:true,
+				},
+			}),
+	});
   const { packageId, isContractDeployed } = useNetworkAwareConfig();
   const { points, spendPoints } = usePoints();
   const { likeCreative, getCreativeExpectation, hasUserLiked, getUserLikePoints } = useCreativeLikes();
-  
+
   const [creative, setCreative] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -31,6 +42,8 @@ const CreativeDetailPage = () => {
   const [editedDescription, setEditedDescription] = useState('');
   const [isEditingDetailedDesc, setIsEditingDetailedDesc] = useState(false);
   const [editedDetailedDescription, setEditedDetailedDescription] = useState('');
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [editedTitle, setEditedTitle] = useState('');
 
   // 获取创意详情
   useEffect(() => {
@@ -73,7 +86,7 @@ const CreativeDetailPage = () => {
             })
           }
         };
-        
+
         const testCreative = testCreatives[id as keyof typeof testCreatives];
         if (testCreative) {
           setCreative(testCreative);
@@ -110,7 +123,7 @@ const CreativeDetailPage = () => {
 
         if (targetEvent && targetEvent.parsedJson) {
           const data = targetEvent.parsedJson as any;
-          
+
           try {
             // 获取完整的创意对象信息
             // console.log('Creative id ', data.creative_id);
@@ -124,17 +137,19 @@ const CreativeDetailPage = () => {
 
             let content = '';
             let desc = "";
+            let title = "";
             if (creativeObject.data?.content && 'fields' in creativeObject.data.content) {
               const fields = creativeObject.data.content.fields as any;
               content = fields.content || '';
               desc = fields.description || '';
+              title = fields.title || '';
 
             }
             // //详细信息
             // console.log('Creative desc :', desc);
             setCreative({
               id: data.creative_id,
-              title: data.title,
+              title: title,
               description: desc,
               content: content,
               category: data.category,
@@ -180,7 +195,7 @@ const CreativeDetailPage = () => {
 
   // 检查是否为创作者
   const isCreator = currentAccount && creative && currentAccount.address === creative.creator;
-  
+
   // 获取创意期待值信息
   const expectation = creative ? getCreativeExpectation(creative.id) : null;
   const userHasLiked = creative ? hasUserLiked(creative.id) : false;
@@ -189,14 +204,14 @@ const CreativeDetailPage = () => {
   // 处理点赞
   const handleLike = async () => {
     if (!creative || !currentAccount || userHasLiked || isLiking) return;
-    
+
     if (points < likeAmount) {
       alert(`积分不足！当前积分：${points} CYKJ，需要：${likeAmount} CYKJ`);
       return;
     }
 
     setIsLiking(true);
-    
+
     try {
       // 消费积分
       const success = spendPoints(likeAmount, `点赞创意: ${creative.title}`);
@@ -223,9 +238,10 @@ const CreativeDetailPage = () => {
     }
   };
 
+
   const handleUpdateBackground = () => {
     if (!creative || !currentAccount || !isCreator) return;
-    
+
     if (!bgImageUrl.trim()) {
       alert('请输入背景图片URL');
       return;
@@ -238,7 +254,7 @@ const CreativeDetailPage = () => {
         ...creative,
         content: updatedContent
       });
-      
+
       setShowBgModal(false);
       setBgImageUrl('');
       // TODO: 后续可以添加链上更新content字段的功能
@@ -263,7 +279,7 @@ const CreativeDetailPage = () => {
       <Box className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <Text className="text-red-400 mb-4">{error || '创意不存在'}</Text>
-          <button 
+          <button
             onClick={handleBack}
             className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors cursor-pointer"
           >
@@ -280,10 +296,10 @@ const CreativeDetailPage = () => {
   return (
     <Box className="min-h-screen">
       <Navbar />
-      
+
       {/* 返回按钮 */}
       <div className="p-6 relative z-50">
-        <button 
+        <button
           onClick={handleBack}
           className="mb-6 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors cursor-pointer relative z-50"
         >
@@ -294,11 +310,11 @@ const CreativeDetailPage = () => {
       <Container className="container mx-auto p-6 relative z-10">
         {/* 作品展示区域 */}
         <Box className="glass rounded-2xl overflow-hidden mb-8">
-          <div 
+          <div
             className="relative h-96 md:h-[500px] overflow-hidden bg-gradient-to-br from-blue-500/20 to-purple-500/20"
             style={{
-              backgroundImage: creativeContent?.background_image 
-                ? `url(${creativeContent.background_image})` 
+              backgroundImage: creativeContent?.background_image
+                ? `url(${creativeContent.background_image})`
                 : undefined,
               backgroundSize: 'contain',
               backgroundPosition: 'center',
@@ -317,7 +333,105 @@ const CreativeDetailPage = () => {
             )}
             <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent"></div>
             <div className="absolute bottom-8 left-8 right-8 text-white">
-              <Heading as="h1" size="8" className="mb-4">{creative.title}</Heading>
+              <div className="flex items-center gap-4 mb-4">
+                {isEditingTitle && isCreator ? (
+                  <div className="flex-1 flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={editedTitle}
+                      onChange={(e) => setEditedTitle(e.target.value)}
+                      className="flex-1 px-3 py-2 bg-white/20 backdrop-blur-sm border border-white/30 rounded-lg text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-white/50"
+                      placeholder="请输入标题..."
+                    />
+                    <button
+                      onClick={async () => {
+                        if (!packageId || !currentAccount) {
+                          alert('合约未部署或未连接钱包');
+                          return;
+                        }
+
+                        if (!editedTitle.trim()) {
+                          alert('标题不能为空');
+                          return;
+                        }
+
+                        try {
+                          const tx = new Transaction();
+                          tx.moveCall({
+                            target: `${packageId}::creative::update_creative_entry`,
+                            arguments: [
+                              tx.object(creative.id),
+                              tx.pure.option('string', editedTitle), // title
+                              tx.pure.option('string', undefined), // description
+                              tx.pure.option('string', undefined), // content
+                              tx.pure.option('string', undefined), // category
+                              tx.pure.option('vector<string>', undefined), // tags
+                            ],
+                          });
+
+                          await new Promise<void>((resolve, reject) => {
+                            signAndExecute(
+                              {
+                                transaction: tx,
+                              },
+                              {
+                                onSuccess: (result) => {
+                                  // 检查交易执行结果
+                                  // console.log('标题更新交易结果:', result);
+                                  
+                                  // 解析交易结果
+                                  setCreative({
+                                    ...creative,
+                                    title: editedTitle
+                                  });
+                                  setIsEditingTitle(false);
+                                  alert('标题更新成功！');
+                                  resolve();
+                                },
+                                onError: (error) => {
+                                  console.error('标题更新错误:', error);
+                                  alert(`标题更新失败：${error.message || '网络错误'}`);
+                                  reject(error);
+                                }
+                              }
+                            );
+                          });
+                        } catch (err) {
+                          console.error('更新标题失败:', err);
+                          alert('更新标题失败，请重试');
+                        }
+                      }}
+                      className="px-3 py-1 bg-green-500 hover:bg-green-600 text-white text-sm rounded-lg transition-colors"
+                    >
+                      保存
+                    </button>
+                    <button
+                      onClick={() => {
+                        setIsEditingTitle(false);
+                        setEditedTitle('');
+                      }}
+                      className="px-3 py-1 bg-gray-500 hover:bg-gray-600 text-white text-sm rounded-lg transition-colors"
+                    >
+                      取消
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-4">
+                    <Heading as="h1" size="8" className="mb-0">{creative.title}</Heading>
+                    {isCreator && (
+                      <button
+                        onClick={() => {
+                          setIsEditingTitle(true);
+                          setEditedTitle(creative.title);
+                        }}
+                        className="px-3 py-1 bg-black/50 hover:bg-black/70 text-white text-sm rounded-lg transition-colors"
+                      >
+                        ✏️ 编辑标题
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
               <div className="flex items-center gap-4 text-sm">
                 <span>分类: {categoryConfig?.name || creative.category}</span>
                 <span>作者: {creative.creator.slice(0, 6)}...{creative.creator.slice(-4)}</span>
@@ -354,7 +468,7 @@ const CreativeDetailPage = () => {
                   </button>
                 )}
               </Flex>
-              
+
               {isEditingDesc && isCreator ? (
                 <div className="mb-6">
                   <textarea
@@ -386,49 +500,31 @@ const CreativeDetailPage = () => {
                             ],
                           });
 
-                          await signAndExecute({ transaction: tx });
-
-                          // 更新本地状态，避免重新获取数据带来的延迟
-                          setCreative({
-                            ...creative,
-                            description: editedDescription
+                          await new Promise<void>((resolve, reject) => {
+                            signAndExecute(
+                              {
+                                transaction: tx,
+                              },
+                              {
+                                onSuccess: (result) => {
+                                  // 检查交易执行结果
+                                  // console.log('交易执行结果:', result);
+                                  
+                                  // 解析交易结果
+                                  setCreative({
+                                    ...creative,
+                                    description: editedDescription
+                                  });
+                                  setIsEditingDesc(false);
+                                },
+                                onError: (error) => {
+                                  console.error('交易执行错误:', error);
+                                  alert(`描述更新失败：${error.message || '网络错误'}`);
+                                  reject(error);
+                                }
+                              }
+                            );
                           });
-                          
-                          // 重新获取最新的链上数据
-                          // try {
-                          //   const updatedObject = await suiClient.getObject({
-                          //     id: creative.id,
-                          //     options: {
-                          //       showContent: true,
-                          //       showType: true
-                          //     }
-                          //   });
-
-                          //   if (updatedObject.data?.content && 'fields' in updatedObject.data.content) {
-                          //     const fields = updatedObject.data.content.fields as any;
-                          //     setCreative({
-                          //       ...creative,
-                          //       description: fields.description || editedDescription,
-                          //       content: fields.content || creative.content
-                          //     });
-                          //   } else {
-                          //     // 如果获取失败，使用本地更新的值
-                          //     setCreative({
-                          //       ...creative,
-                          //       description: editedDescription
-                          //     });
-                          //   }
-                          // } catch (fetchError) {
-                          //   console.error('重新获取数据失败:', fetchError);
-                          //   // 如果重新获取失败，使用本地更新的值
-                          //   setCreative({
-                          //     ...creative,
-                          //     description: editedDescription
-                          //   });
-                          // }
-                          
-                          setIsEditingDesc(false);
-                          alert('描述更新成功！');
                         } catch (err) {
                           console.error('更新失败:', err);
                           alert('更新失败，请重试');
@@ -476,7 +572,7 @@ const CreativeDetailPage = () => {
                     </button>
                   )}
                 </Flex>
-                
+
                 {isEditingDetailedDesc && isCreator ? (
                   <div className="mb-6">
                     <textarea
@@ -501,7 +597,7 @@ const CreativeDetailPage = () => {
                               ...currentContent,
                               detailed_description: editedDetailedDescription
                             };
-                            
+
                             // 调用合约更新content字段
                             const tx = new Transaction();
                             tx.moveCall({
@@ -516,10 +612,32 @@ const CreativeDetailPage = () => {
                               ],
                             });
 
-                            await signAndExecute({ transaction: tx });
-                            setCreative({
-                            ...creative,
-                            content: JSON.stringify(updatedContent)
+                            await new Promise<void>((resolve, reject) => {
+                              signAndExecute(
+                                { transaction: tx },
+                                {
+                                  onSuccess: (result) => {
+                                    // 检查交易执行结果
+                                    // console.log('详细描述更新交易结果:', result);
+                                    
+                                    // 解析交易结果
+                                    // parseTransactionResult(result);
+
+                                    setCreative({
+                                      ...creative,
+                                      content: JSON.stringify(updatedContent)
+                                    });
+                                    setIsEditingDetailedDesc(false);
+                                    alert('详细描述更新成功！');
+                                    resolve();
+                                  },
+                                  onError: (error) => {
+                                    console.error('详细描述更新错误:', error);
+                                    alert(`详细描述更新失败：${error.message || '网络错误'}`);
+                                    reject(error);
+                                  }
+                                }
+                              );
                             });
                             // 重新获取最新的链上数据
                             // try {
@@ -552,7 +670,7 @@ const CreativeDetailPage = () => {
                             //     content: JSON.stringify(updatedContent)
                             //   });
                             // }
-                            
+
                             setIsEditingDetailedDesc(false);
                             alert('详细描述更新成功！');
                           } catch (err) {
@@ -701,7 +819,7 @@ const CreativeDetailPage = () => {
                     <Text size="1" className="text-gray-600">
                       当前积分: {points} CYKJ
                     </Text>
-                    <Button 
+                    <Button
                       className={`${isLiking || points < likeAmount ? 'bg-gray-500' : 'bg-blue-500 hover:bg-blue-600'} text-white`}
                       onClick={handleLike}
                       disabled={isLiking || points < likeAmount || !currentAccount}
@@ -720,13 +838,13 @@ const CreativeDetailPage = () => {
                 <Button className="bg-purple-500 hover:bg-purple-600 text-white">
                   💬 收藏作品
                 </Button>
-                <Button 
+                <Button
                   className="bg-green-500 hover:bg-green-600 text-white"
                   onClick={() => {
                     const shareUrl = window.location.href;
                     const shareTitle = `发现一个精彩创意：${creative.title}`;
                     const shareText = `${creative.description.slice(0, 100)}${creative.description.length > 100 ? '...' : ''}`;
-                    
+
                     // 创建分享菜单
                     const shareMenu = document.createElement('div');
                     shareMenu.className = 'fixed inset-0 bg-black/50 flex items-center justify-center z-[9999]';
@@ -761,7 +879,7 @@ const CreativeDetailPage = () => {
                         </div>
                       </div>
                     `;
-                    
+
                     // 添加分享函数
                     (window as any).shareToWeChat = () => {
                       // 微信分享：复制链接到剪贴板
@@ -772,32 +890,32 @@ const CreativeDetailPage = () => {
                       });
                       (window as any).closeShareMenu();
                     };
-                    
+
                     (window as any).shareToWeibo = () => {
                       const weiboUrl = `https://service.weibo.com/share/share.php?url=${encodeURIComponent(shareUrl)}&title=${encodeURIComponent(shareTitle + ' ' + shareText)}`;
                       window.open(weiboUrl, '_blank');
                       (window as any).closeShareMenu();
                     };
-                    
+
                     (window as any).shareToTwitter = () => {
                       const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareTitle + ' ' + shareText)}&url=${encodeURIComponent(shareUrl)}`;
                       window.open(twitterUrl, '_blank');
                       (window as any).closeShareMenu();
                     };
-                    
+
                     (window as any).shareToDiscord = () => {
                       // Discord 不支持直接分享，复制链接
                       navigator.clipboard.writeText(`${shareTitle}\n${shareText}\n${shareUrl}`);
                       alert('Discord 分享内容已复制到剪贴板，请粘贴到 Discord 频道中！');
                       (window as any).closeShareMenu();
                     };
-                    
+
                     (window as any).copyLink = () => {
                       navigator.clipboard.writeText(shareUrl);
                       alert('链接已复制到剪贴板！');
                       (window as any).closeShareMenu();
                     };
-                    
+
                     (window as any).closeShareMenu = () => {
                       document.body.removeChild(shareMenu);
                       delete (window as any).shareToWeChat;
@@ -807,13 +925,13 @@ const CreativeDetailPage = () => {
                       delete (window as any).copyLink;
                       delete (window as any).closeShareMenu;
                     };
-                    
+
                     document.body.appendChild(shareMenu);
                   }}
                 >
                   🔄 分享作品
                 </Button>
-                <Button 
+                <Button
                   className="bg-gray-700 hover:bg-gray-600 text-white"
                   onClick={() => {
                     alert(`联系作者功能即将推出！\n\n作者地址：${creative.creator}\n\n您可以：\n1. 复制作者地址进行链上交互\n2. 等待站内消息系统上线\n3. 在创意评论区留言`);
@@ -822,7 +940,7 @@ const CreativeDetailPage = () => {
                   📧 联系作者
                 </Button>
                 {isCreator && (
-                  <button 
+                  <button
                     onClick={handleDelete}
                     className="w-full px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors cursor-pointer"
                   >
