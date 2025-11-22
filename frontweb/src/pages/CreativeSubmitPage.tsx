@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useCurrentAccount, useSignAndExecuteTransaction } from '@mysten/dapp-kit';
+import { useSignAndExecuteTransaction } from '@mysten/dapp-kit';
 import { Transaction } from '@mysten/sui/transactions';
 import { CATEGORIES, CATEGORY_DISPLAY, TAG_DISPLAY } from '../config/categories';
 import { useNetworkAwareConfig } from '../hooks/useNetworkAwareConfig';
+import { useWalletConnection } from '../hooks/useWalletConnection';
 import { stringifyCreativeContent } from '../utils/contentUtils';
+import { parseTransactionResultSimple } from '../utils/transactionUtils';
 import Navbar from '../components/Navbar';
+import WalletConnectPrompt from '../components/WalletConnectPrompt';
 import { Box, Container, Heading, Text } from '@radix-ui/themes';
 
 interface FormData {
@@ -32,9 +35,9 @@ const CreativeSubmitPage: React.FC = () => {
   const [tagInput, setTagInput] = useState('');
 
   const navigate = useNavigate();
-  const currentAccount = useCurrentAccount();
   const { mutate: signAndExecute } = useSignAndExecuteTransaction();
   const { packageId, sharedCreativesId } = useNetworkAwareConfig();
+  const { isConnected, needsConnection, address, checkConnection } = useWalletConnection();
 
   // 创意类型映射
   const creativeTypes = [
@@ -93,7 +96,8 @@ const CreativeSubmitPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!currentAccount) {
+    // 钱包连接状态已经在页面加载时检查，这里只需要确认
+    if (!isConnected) {
       alert('请先连接钱包');
       return;
     }
@@ -123,48 +127,63 @@ const CreativeSubmitPage: React.FC = () => {
     }
 
     setLoading(true);
-    try {
-      const tx = new Transaction();
-      
-      // 将内容和背景图片封装为JSON
-      const contentJson = stringifyCreativeContent({
-        text: formData.content || formData.description,
-        background_image: formData.backgroundImage,
-        media: [],
-        thumbnail: '',
-        detailed_description: formData.content || ''
-      });
+    
+    const tx = new Transaction();
+    
+    // 将内容和背景图片封装为JSON
+    const contentJson = stringifyCreativeContent({
+      text: formData.content || formData.description,
+      background_image: formData.backgroundImage,
+      media: [],
+      thumbnail: '',
+      detailed_description: formData.content || ''
+    });
 
-      // 调用智能合约的 submit_creative_to_shared 函数
-      tx.moveCall({
-        target: `${packageId}::creative::submit_creative_to_shared`,
-        arguments: [
-          tx.pure.string(formData.title),
-          tx.pure.string(formData.description),
-          tx.pure.string(contentJson),
-          tx.pure.u8(formData.creativeType),
-          tx.pure.string(formData.category),
-          tx.pure.vector('string', formData.tags),
-          tx.object('0x6'),
-          tx.object(sharedCreativesId),
-        ],
-      });
+    // 调用智能合约的 submit_creative_to_shared 函数
+    tx.moveCall({
+      target: `${packageId}::creative::submit_creative_to_shared`,
+      arguments: [
+        tx.pure.string(formData.title),
+        tx.pure.string(formData.description),
+        tx.pure.string(contentJson),
+        tx.pure.u8(formData.creativeType),
+        tx.pure.string(formData.category),
+        tx.pure.vector('string', formData.tags),
+        tx.object('0x6'),
+        tx.object(sharedCreativesId),
+      ],
+    });
 
-      const result = await signAndExecute({ transaction: tx });
-      
-      console.log('本地创意提交成功:', result);
-      alert('本地创意提交成功！等待审核。');
-      
-      // 提交成功后跳转到首页
-      navigate('/');
-      
-    } catch (error) {
-      console.error('提交创意失败:', error);
-      alert(`提交创意失败: ${error instanceof Error ? error.message : '请重试'}`);
-    } finally {
-      setLoading(false);
-    }
+    // 使用回调方式处理交易结果
+    signAndExecute(
+      { transaction: tx },
+      {
+        onSuccess: (result: any) => {
+          console.log('📍 创意提交交易成功:', result);
+          console.log('本地创意提交成功，交易摘要:', result.digest);
+          alert('本地创意提交成功！等待审核。');
+          
+          // 提交成功后跳转到首页
+          navigate('/');
+          setLoading(false);
+        },
+        onError: (error: any) => {
+          console.error('❌ 创意提交交易失败:', error);
+          const errorMessage = error?.message || '未知错误';
+          alert(`提交创意失败: ${errorMessage}`);
+          setLoading(false);
+        }
+      }
+    );
   };
+
+  // 如果需要连接钱包，显示连接钱包引导页面
+  if (needsConnection) {
+    return <WalletConnectPrompt onConnect={() => {
+      console.log('钱包连接成功，重新检查连接状态');
+      checkConnection();
+    }} />;
+  }
 
   return (
     <Box className="min-h-screen bg-gray-50">
@@ -178,6 +197,14 @@ const CreativeSubmitPage: React.FC = () => {
             <Text size="4" className="text-gray-600">
               分享您的创意想法，让社区为您的项目投票
             </Text>
+            {/* 钱包连接状态显示 */}
+            {isConnected && address && (
+              <Box className="mt-4">
+                <Text size="2" className="text-green-600">
+                  ✅ 钱包已连接: {address.slice(0, 6)}...{address.slice(-4)}
+                </Text>
+              </Box>
+            )}
           </Box>
 
           {/* 提交表单 */}
@@ -382,7 +409,7 @@ const CreativeSubmitPage: React.FC = () => {
                   type="submit"
                   className="px-8 py-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg hover:from-blue-600 hover:to-purple-600 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                   style={{ position: 'relative', zIndex: 3001, pointerEvents: 'auto' }}
-                  disabled={loading || !currentAccount}
+                  disabled={loading || !isConnected}
                 >
                   {loading ? '提交中...' : '提交创意'}
                 </button>
